@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "OLED.h"
+#include "encoder.h"
 
 #define LED_PIN 25
 
@@ -11,6 +12,7 @@ void setup() {
     }
 
     OLED_init();
+    encoder_init();
 
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, HIGH); // Turn on the LED

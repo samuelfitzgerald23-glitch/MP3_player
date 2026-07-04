@@ -1,11 +1,5 @@
 #include "OLED.h"
 
-#define SCL_PIN 2
-#define SDA_PIN 3
-#define RESET_PIN 4
-#define DC_PIN 5
-#define CS_PIN 6
-
 
 // Bitmap data for the images
 static const unsigned char image_Attention_bits[] U8X8_PROGMEM = {0x0e,0x0a,0x0a,0x0a,0x0e,0x04,0x00,0x0e};
@@ -19,71 +13,76 @@ static const unsigned char image_skip_button_bits[] U8X8_PROGMEM = {0x01,0x03,0x
 static const unsigned char image_Voldwn_bits[] U8X8_PROGMEM = {0x08,0x0c,0x2f,0x2f,0x0c,0x08};
 static const unsigned char image_Volup_bits[] U8X8_PROGMEM = {0x48,0x8c,0xaf,0xaf,0x8c,0x48};
 
-int Attention_y = 5;
-int ButtonCenter_x = 5;
-int ButtonCenter_y = 14;
-int gear_x = 4;
-int gear_y = 4;
-int music_note_x = 5;
-int playlists_x = 16;
-int playlists_y = 21;
-int settings_x = 16;
-int settings_y = 11;
+static int Attention_y = ICON_Y_ZERO + 1;
+
+void moveAttention(int n) {
+    Attention_y += 10 * n;
+    if (Attention_y < ICON_Y_ZERO + 1) {
+        Attention_y = ICON_Y_ZERO + 1;
+    } else if (Attention_y > 55) {
+        Attention_y = 55;
+    }
+}
+
 const char* song_name_text = "song name - artist";
-int song_name_x = 16;
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
+
+OLED_Screen_t OLED_Screens[] = {};
 
 void OLED_init() {
     //I dont know why but without this the cs pin is not set to low and the oled does not work
     pinMode(CS_PIN, OUTPUT);
     
     Serial.println("Starting OLED init...");
-    u8g2.begin();
-    Serial.println("OLED begin() done");
+    if (u8g2.begin()) {
+        Serial.println("OLED initialized");
+    } else {
+        Serial.println("OLED initialization failed");
+    }
     
     u8g2.setPowerSave(0);
-    u8g2.setContrast(255);
-    u8g2.setFont(u8g2_font_4x6_tr);
-}
-
-void OLED_Screen1() {
-    digitalWrite(CS_PIN, LOW);
+    //u8g2.setContrast(255);
     u8g2.clearBuffer();
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
+    u8g2.setFont(u8g2_font_4x6_tr);
+}
+
+void OLED_MainScreen() {
     // gear
-    u8g2.drawXBMP(gear_x, gear_y, 9, 9, image_gear_bits);
+    u8g2.drawXBMP(ICON_X_ZERO - 1, ICON_Y_ZERO, 9, 9, image_gear_bits);
     // settings
-    u8g2.drawStr(settings_x, settings_y, "Settings");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
     // ButtonCenter
-    u8g2.drawXBMP(ButtonCenter_x, ButtonCenter_y, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
     // playlists
-    u8g2.drawStr(playlists_x, playlists_y, "Playlists");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
     // music_note
-    u8g2.drawXBMP(music_note_x, 56, 5, 5, image_music_note_bits);
+    u8g2.drawXBMP(ICON_X_ZERO + 1, 56, 5, 5, image_music_note_bits);
     // song_name
-    u8g2.drawStr(song_name_x, 61, song_name_text);
+    u8g2.drawStr(TEXT_X_ZERO, 61, song_name_text);
     // Attention
     u8g2.drawXBMP(64, Attention_y, 5, 8, image_Attention_bits);
     // back_button
-    u8g2.drawXBMP(89, 44, 3, 5, image_back_button_bits);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO + 7, PLAYBACK_Y_ZERO + 34, 3, 5, image_back_button_bits);
     // skip_button
-    u8g2.drawXBMP(103, 44, 3, 5, image_skip_button_bits);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO + 21, PLAYBACK_Y_ZERO + 34, 3, 5, image_skip_button_bits);
     // pause
-    u8g2.drawXBMP(96, 44, 3, 5, image_pause_bits);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO + 14, PLAYBACK_Y_ZERO + 34, 3, 5, image_pause_bits);
     // Volup
-    u8g2.drawXBMP(113, 4, 8, 6, image_Volup_bits);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO + 31, PLAYBACK_Y_ZERO - 6, 8, 6, image_Volup_bits);
     // Voldwn
-    u8g2.drawXBMP(74, 4, 6, 6, image_Voldwn_bits);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO - 8, PLAYBACK_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
     // reccord_icon
-    u8g2.drawXBMP(82, 10, 31, 31, image_reccord_icon_bits);
-    digitalWrite(CS_PIN, HIGH);
+    u8g2.drawXBMP(PLAYBACK_X_ZERO, PLAYBACK_Y_ZERO, 31, 31, image_reccord_icon_bits);
 }
 
 void OLEDTask() {
+    digitalWrite(CS_PIN, LOW);
     u8g2.firstPage();
     do {
-        OLED_Screen1();
+        OLED_MainScreen();
     } while (u8g2.nextPage());
+    digitalWrite(CS_PIN, HIGH);
 }
