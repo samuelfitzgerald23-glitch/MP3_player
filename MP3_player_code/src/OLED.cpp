@@ -1,0 +1,89 @@
+#include "OLED.h"
+
+#define SCL_PIN 2
+#define SDA_PIN 3
+#define RESET_PIN 4
+#define DC_PIN 5
+#define CS_PIN 6
+
+
+// Bitmap data for the images
+static const unsigned char image_Attention_bits[] U8X8_PROGMEM = {0x0e,0x0a,0x0a,0x0a,0x0e,0x04,0x00,0x0e};
+static const unsigned char image_back_button_bits[] U8X8_PROGMEM = {0x04,0x06,0x07,0x06,0x04};
+static const unsigned char image_ButtonCenter_bits[] U8X8_PROGMEM = {0x1c,0x22,0x5d,0x5d,0x5d,0x22,0x1c};
+static const unsigned char image_gear_bits[] U8X8_PROGMEM = {0x10,0x00,0xba,0x00,0x44,0x00,0x92,0x00,0xbb,0x01,0x92,0x00,0x44,0x00,0xba,0x00,0x10,0x00};
+static const unsigned char image_music_note_bits[] U8X8_PROGMEM = {0x1e,0x12,0x12,0x1b,0x1b};
+static const unsigned char image_pause_bits[] U8X8_PROGMEM = {0x05,0x05,0x05,0x05,0x05};
+static const unsigned char image_reccord_icon_bits[] U8X8_PROGMEM = {0x00,0xf0,0x07,0x00,0x00,0xfe,0x3f,0x00,0x80,0xff,0xff,0x00,0xc0,0x0f,0xf8,0x01,0xe0,0xf3,0xe7,0x03,0xf0,0xfc,0x9f,0x07,0x78,0xff,0x7f,0x0f,0xbc,0x1f,0xfc,0x1e,0xdc,0xe7,0xf3,0x1d,0xde,0xfb,0xef,0x3d,0xee,0xfd,0xdf,0x3b,0xee,0xfe,0xbf,0x3b,0xf7,0x3e,0xbe,0x77,0x77,0x1f,0x7c,0x77,0x77,0x8f,0x78,0x77,0x77,0xcf,0x79,0x77,0x77,0x8f,0x78,0x77,0x77,0x1f,0x7c,0x77,0xf7,0x3e,0xbe,0x77,0xee,0xfe,0xbf,0x3b,0xee,0xfd,0xdf,0x3b,0xde,0xfb,0xef,0x3d,0xdc,0xe7,0xf3,0x1d,0xbc,0x1f,0xfc,0x1e,0x78,0xff,0x7f,0x0f,0xf0,0xfc,0x9f,0x07,0xe0,0xf3,0xe7,0x03,0xc0,0x0f,0xf8,0x01,0x80,0xff,0xff,0x00,0x00,0xfe,0x3f,0x00,0x00,0xf0,0x07,0x00};
+static const unsigned char image_skip_button_bits[] U8X8_PROGMEM = {0x01,0x03,0x07,0x03,0x01};
+static const unsigned char image_Voldwn_bits[] U8X8_PROGMEM = {0x08,0x0c,0x2f,0x2f,0x0c,0x08};
+static const unsigned char image_Volup_bits[] U8X8_PROGMEM = {0x48,0x8c,0xaf,0xaf,0x8c,0x48};
+
+int Attention_y = 5;
+int ButtonCenter_x = 5;
+int ButtonCenter_y = 14;
+int gear_x = 4;
+int gear_y = 4;
+int music_note_x = 5;
+int playlists_x = 16;
+int playlists_y = 21;
+int settings_x = 16;
+int settings_y = 11;
+const char* song_name_text = "song name - artist";
+int song_name_x = 16;
+
+U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
+
+void OLED_init() {
+    //I dont know why but without this the cs pin is not set to low and the oled does not work
+    pinMode(CS_PIN, OUTPUT);
+    
+    Serial.println("Starting OLED init...");
+    u8g2.begin();
+    Serial.println("OLED begin() done");
+    
+    u8g2.setPowerSave(0);
+    u8g2.setContrast(255);
+    u8g2.setFont(u8g2_font_4x6_tr);
+}
+
+void OLED_Screen1() {
+    digitalWrite(CS_PIN, LOW);
+    u8g2.clearBuffer();
+    u8g2.setFontMode(1);
+    u8g2.setBitmapMode(1);
+    // gear
+    u8g2.drawXBMP(gear_x, gear_y, 9, 9, image_gear_bits);
+    // settings
+    u8g2.drawStr(settings_x, settings_y, "Settings");
+    // ButtonCenter
+    u8g2.drawXBMP(ButtonCenter_x, ButtonCenter_y, 7, 7, image_ButtonCenter_bits);
+    // playlists
+    u8g2.drawStr(playlists_x, playlists_y, "Playlists");
+    // music_note
+    u8g2.drawXBMP(music_note_x, 56, 5, 5, image_music_note_bits);
+    // song_name
+    u8g2.drawStr(song_name_x, 61, song_name_text);
+    // Attention
+    u8g2.drawXBMP(64, Attention_y, 5, 8, image_Attention_bits);
+    // back_button
+    u8g2.drawXBMP(89, 44, 3, 5, image_back_button_bits);
+    // skip_button
+    u8g2.drawXBMP(103, 44, 3, 5, image_skip_button_bits);
+    // pause
+    u8g2.drawXBMP(96, 44, 3, 5, image_pause_bits);
+    // Volup
+    u8g2.drawXBMP(113, 4, 8, 6, image_Volup_bits);
+    // Voldwn
+    u8g2.drawXBMP(74, 4, 6, 6, image_Voldwn_bits);
+    // reccord_icon
+    u8g2.drawXBMP(82, 10, 31, 31, image_reccord_icon_bits);
+    digitalWrite(CS_PIN, HIGH);
+}
+
+void OLEDTask() {
+    u8g2.firstPage();
+    do {
+        OLED_Screen1();
+    } while (u8g2.nextPage());
+}
