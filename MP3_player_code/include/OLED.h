@@ -35,12 +35,13 @@ struct OLED_Screen_t {
     uint8_t N_selects;
     void (*drawScreen)();
     OLED_Select currentSelect;
+    uint8_t* gotoID;
 };
 
-
+OLED_Screen_t* getCurrentScreen();
 void OLED_init();
 void OLED_MainScreen();
+void OLED_SettingsScreen();
 void OLEDTask();
-void moveAttention(int n);
 
 #endif // OLED_H

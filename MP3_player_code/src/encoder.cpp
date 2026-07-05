@@ -9,10 +9,25 @@ void encoder_init() {
 
 void encoder_clk_isr() {
     // Handle the encoder rotation event
+    OLED_Screen_t* currentScreen = getCurrentScreen();
+
+    int value = static_cast<int>(currentScreen->currentSelect);
+
     if (digitalRead(ENCODER_CLK_PIN) == digitalRead(ENCODER_DT_PIN)) {
-        moveAttention(1);
+        //positive rotation
+        value += 1;
     }
     else {
-        moveAttention(-1);
+        //negative rotation
+        value -= 1;
     }
+
+    if (value < 0) {
+        value = currentScreen->N_selects - 1;
+    }
+    else if (value >= currentScreen->N_selects) {
+        value = 0;
+    }
+
+    currentScreen->currentSelect = static_cast<OLED_Select>(value);
 }

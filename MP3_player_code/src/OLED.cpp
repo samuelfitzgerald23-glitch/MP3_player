@@ -13,33 +13,32 @@ static const unsigned char image_skip_button_bits[] U8X8_PROGMEM = {0x01,0x03,0x
 static const unsigned char image_Voldwn_bits[] U8X8_PROGMEM = {0x08,0x0c,0x2f,0x2f,0x0c,0x08};
 static const unsigned char image_Volup_bits[] U8X8_PROGMEM = {0x48,0x8c,0xaf,0xaf,0x8c,0x48};
 
-static int Attention_y = ICON_Y_ZERO + 1;
-
-void moveAttention(int n) {
-    Attention_y += 10 * n;
-    if (Attention_y < ICON_Y_ZERO + 1) {
-        Attention_y = ICON_Y_ZERO + 1;
-    } else if (Attention_y > 55) {
-        Attention_y = 55;
-    }
-}
+static int Attention_y = ICON_Y_ZERO;
 
 const char* song_name_text = "song name - artist";
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
-OLED_Screen_t OLED_Screens[] = {};
+static uint8_t mainChildren[] = {1};
+static uint8_t settingsChildren[] = {0};
+
+OLED_Screen_t OLED_Screens[] = {
+    {0, 2, OLED_MainScreen, SELECT0, mainChildren},
+    {1, 5, OLED_SettingsScreen, SELECT0, settingsChildren}
+};
+
+static OLED_Screen_t* currentScreen = &OLED_Screens[1];
+
+OLED_Screen_t* getCurrentScreen() {
+    return currentScreen;
+}
 
 void OLED_init() {
     //I dont know why but without this the cs pin is not set to low and the oled does not work
     pinMode(CS_PIN, OUTPUT);
     
     Serial.println("Starting OLED init...");
-    if (u8g2.begin()) {
-        Serial.println("OLED initialized");
-    } else {
-        Serial.println("OLED initialization failed");
-    }
+    u8g2.begin();
     
     u8g2.setPowerSave(0);
     //u8g2.setContrast(255);
@@ -50,39 +49,65 @@ void OLED_init() {
 }
 
 void OLED_MainScreen() {
-    // gear
+    // Icons
     u8g2.drawXBMP(ICON_X_ZERO - 1, ICON_Y_ZERO, 9, 9, image_gear_bits);
-    // settings
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
-    // ButtonCenter
     u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
-    // playlists
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
-    // music_note
-    u8g2.drawXBMP(ICON_X_ZERO + 1, 56, 5, 5, image_music_note_bits);
-    // song_name
-    u8g2.drawStr(TEXT_X_ZERO, 61, song_name_text);
-    // Attention
-    u8g2.drawXBMP(64, Attention_y, 5, 8, image_Attention_bits);
-    // back_button
+    // Playback icons
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 7, PLAYBACK_Y_ZERO + 34, 3, 5, image_back_button_bits);
-    // skip_button
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 21, PLAYBACK_Y_ZERO + 34, 3, 5, image_skip_button_bits);
-    // pause
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 14, PLAYBACK_Y_ZERO + 34, 3, 5, image_pause_bits);
-    // Volup
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 31, PLAYBACK_Y_ZERO - 6, 8, 6, image_Volup_bits);
-    // Voldwn
     u8g2.drawXBMP(PLAYBACK_X_ZERO - 8, PLAYBACK_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
-    // reccord_icon
     u8g2.drawXBMP(PLAYBACK_X_ZERO, PLAYBACK_Y_ZERO, 31, 31, image_reccord_icon_bits);
+    // text
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
+}
+void OLED_SettingsScreen() {
+    // Icons
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 20, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 30, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 40, 7, 7, image_ButtonCenter_bits);
+    // Text
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Edit songs");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playback");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 20, "Equaliser");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 30, "Sleep");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 40, "Back");
 }
 
 void OLEDTask() {
+    switch (currentScreen->currentSelect) {
+        case SELECT0:
+            Attention_y = ICON_Y_ZERO;
+            break;
+        case SELECT1:
+            Attention_y = ICON_Y_ZERO + 10;
+            break;
+        case SELECT2:
+            Attention_y = ICON_Y_ZERO + 20;
+            break;
+        case SELECT3:
+            Attention_y = ICON_Y_ZERO + 30;
+            break;
+        case SELECT4:
+            Attention_y = ICON_Y_ZERO + 40;
+            break;
+    }
+
     digitalWrite(CS_PIN, LOW);
     u8g2.firstPage();
     do {
-        OLED_MainScreen();
+        u8g2.setFontMode(1);
+        u8g2.setBitmapMode(1);
+        currentScreen->drawScreen();
+        //select identifier
+        u8g2.drawXBMP(64, Attention_y, 5, 8, image_Attention_bits);
+        // song name
+        u8g2.drawXBMP(ICON_X_ZERO + 1, 56, 5, 5, image_music_note_bits);
+        u8g2.drawStr(TEXT_X_ZERO, 61, song_name_text);
     } while (u8g2.nextPage());
     digitalWrite(CS_PIN, HIGH);
 }
