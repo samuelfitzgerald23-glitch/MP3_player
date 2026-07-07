@@ -17,18 +17,17 @@ static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8
 static int Attention_y = ICON_Y_ZERO;
 static int Attention_x = 64;
 
-const char* song_name_text = "Song name - Aritist";
+const char* song_name_text = "Song name - Artist";
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
-//children ID arrays hold the ID of the children screens for each screen
-static uint8_t mainChildren[2] = {1, 1};
-static uint8_t settingsChildren[4] = {1, 1, 1, 1};
-
 OLED_Screen_t OLED_Screens[] = {
-    {0, 2, OLED_MainScreen, SELECT0, {1, 1}, 0},
-    {1, 4, OLED_SettingsScreen, SELECT0, {1, 1, 1, 1}, 0}
+    {0, 2, OLED_MainScreen, SELECT0, {1, 1}, 0, "Main"},
+    {1, 4, OLED_SettingsScreen, SELECT0, {2, 2, 2, 2}, 0, "Settings"},
+    {2, 6, OLED_TestScreen, SELECT0, {0, 0, 0, 0, 0, 0}, 1, "Test"}
 };
+
+static int page = 0;
 
 static OLED_Screen_t* currentScreen = &OLED_Screens[0];
 
@@ -43,11 +42,13 @@ void changeScreen() {
         currentScreen = &OLED_Screens[currentScreen->childrenIDs[currentScreen->currentSelect]];
     }
     currentScreen->currentSelect = SELECT0;
+    page = 0;
 }
 
 void OLED_init() {
     //I dont know why but without this the cs pin is not set to low and the oled does not work
     pinMode(CS_PIN, OUTPUT);
+    digitalWrite(CS_PIN, LOW);
     
     u8g2.begin();
     
@@ -59,10 +60,16 @@ void OLED_init() {
     u8g2.setFont(u8g2_font_4x6_tr);
 }
 
+void DrawOptions() {
+    for (int i = 0; i < 5; i++) {
+        if ((i+5*page) < currentScreen->N_selects) {
+            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + (i * 10), 7, 7, image_ButtonCenter_bits);
+            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + (i * 10), OLED_Screens[currentScreen->childrenIDs[i]].name);
+        }
+    }
+}
+
 void OLED_MainScreen() {
-    // Icons
-    u8g2.drawXBMP(ICON_X_ZERO - 1, ICON_Y_ZERO, 9, 9, image_gear_bits);
-    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
     // Playback icons
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 7, PLAYBACK_Y_ZERO + 34, 3, 5, image_back_button_bits);
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 21, PLAYBACK_Y_ZERO + 34, 3, 5, image_skip_button_bits);
@@ -70,21 +77,33 @@ void OLED_MainScreen() {
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 31, PLAYBACK_Y_ZERO - 6, 8, 6, image_Volup_bits);
     u8g2.drawXBMP(PLAYBACK_X_ZERO - 8, PLAYBACK_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
     u8g2.drawXBMP(PLAYBACK_X_ZERO, PLAYBACK_Y_ZERO, 31, 31, image_reccord_icon_bits);
-    // text
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
 }
+
 void OLED_SettingsScreen() {
     // Icons
-    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO, 7, 7, image_ButtonCenter_bits);
-    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
-    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 20, 7, 7, image_ButtonCenter_bits);
-    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 30, 7, 7, image_ButtonCenter_bits);
-    // Text
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Edit songs");
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playback");
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 20, "Equaliser");
-    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 30, "Sleep");
+    u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
+}
+
+void OLED_TestScreen() {
+    u8g2.drawStr(70, TEXT_Y_ZERO, "Test screen");
+}
+
+void TotalScreen() {
+    u8g2.setFontMode(1);
+    u8g2.setBitmapMode(1);
+
+    u8g2.drawRFrame(0, 1, 126, 62, 5);
+    DrawOptions();
+    currentScreen->drawScreen();
+    //select identifier
+    u8g2.drawXBMP(Attention_x, Attention_y, 5, 8, image_Attention_bits);
+    //song name
+    u8g2.drawXBMP(ICON_X_ZERO + 1, 55, 5, 5, image_music_note_bits);
+    u8g2.drawStr(TEXT_X_ZERO, 60, song_name_text);
+    if(currentScreen->id != 0) {
+        //only draw back arrow if not the main screen
+        u8g2.drawXBMP(115, 55, 8, 5, image_back_arrow_bits);
+    }
 }
 
 void OLEDTask() {
@@ -106,27 +125,12 @@ void OLEDTask() {
             Attention_y = ICON_Y_ZERO + 40;
             break;
         case BACK:
-            Attention_y = ICON_Y_ZERO + 40;
             Attention_x = 115;
-            break;
+            Attention_y = ICON_Y_ZERO + 40;
     }
 
-    digitalWrite(CS_PIN, LOW);
     u8g2.firstPage();
     do {
-        u8g2.setFontMode(1);
-        u8g2.setBitmapMode(1);
-        u8g2.drawRFrame(0, 1, 126, 62, 5);
-        currentScreen->drawScreen();
-        //select identifier
-        u8g2.drawXBMP(Attention_x, Attention_y, 5, 8, image_Attention_bits);
-        // song name
-        u8g2.drawXBMP(ICON_X_ZERO + 1, 55, 5, 5, image_music_note_bits);
-        u8g2.drawStr(TEXT_X_ZERO, 60, song_name_text);
-        if(currentScreen->id != 0) {
-            //only draw back arrow if not the main screen
-            u8g2.drawXBMP(115, 55, 8, 5, image_back_arrow_bits);
-        }
+        TotalScreen();
     } while (u8g2.nextPage());
-    digitalWrite(CS_PIN, HIGH);
 }

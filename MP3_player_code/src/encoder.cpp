@@ -28,11 +28,9 @@ void encoder_clk_isr() {
         value -= 1;
     }
 
-    if ((value < 0) && (currentScreen->id != 0)) {
-        value = 5;
-    }
-    else if (value < 0) {
-        value = currentScreen->N_selects - 1;
+    if (value < 0) {
+        value = -1;
+        if (currentScreen->id == 0) value = 0;
     }
     else if (value >= currentScreen->N_selects) {
         value = 0;
