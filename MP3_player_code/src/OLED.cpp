@@ -12,43 +12,32 @@ static const unsigned char image_reccord_icon_bits[] U8X8_PROGMEM = {0x00,0xf0,0
 static const unsigned char image_skip_button_bits[] U8X8_PROGMEM = {0x01,0x03,0x07,0x03,0x01};
 static const unsigned char image_Voldwn_bits[] U8X8_PROGMEM = {0x08,0x0c,0x2f,0x2f,0x0c,0x08};
 static const unsigned char image_Volup_bits[] U8X8_PROGMEM = {0x48,0x8c,0xaf,0xaf,0x8c,0x48};
-static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8f,0x07,0x0f};
 
 static int Attention_y = ICON_Y_ZERO;
-static int Attention_x = 64;
 
-const char* song_name_text = "Song name - Aritist";
+const char* song_name_text = "song name - artist";
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
-//children ID arrays hold the ID of the children screens for each screen
-static uint8_t mainChildren[2] = {1, 1};
-static uint8_t settingsChildren[4] = {1, 1, 1, 1};
+static uint8_t mainChildren[] = {1};
+static uint8_t settingsChildren[] = {0};
 
 OLED_Screen_t OLED_Screens[] = {
-    {0, 2, OLED_MainScreen, SELECT0, {1, 1}, 0},
-    {1, 4, OLED_SettingsScreen, SELECT0, {1, 1, 1, 1}, 0}
+    {0, 2, OLED_MainScreen, SELECT0, mainChildren},
+    {1, 5, OLED_SettingsScreen, SELECT0, settingsChildren}
 };
 
-static OLED_Screen_t* currentScreen = &OLED_Screens[0];
+static OLED_Screen_t* currentScreen = &OLED_Screens[1];
 
 OLED_Screen_t* getCurrentScreen() {
     return currentScreen;
-}
-
-void changeScreen() {
-    if (currentScreen->currentSelect == BACK) {
-        currentScreen = &OLED_Screens[currentScreen->parentID];
-    } else {
-        currentScreen = &OLED_Screens[currentScreen->childrenIDs[currentScreen->currentSelect]];
-    }
-    currentScreen->currentSelect = SELECT0;
 }
 
 void OLED_init() {
     //I dont know why but without this the cs pin is not set to low and the oled does not work
     pinMode(CS_PIN, OUTPUT);
     
+    Serial.println("Starting OLED init...");
     u8g2.begin();
     
     u8g2.setPowerSave(0);
@@ -80,15 +69,16 @@ void OLED_SettingsScreen() {
     u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 7, 7, image_ButtonCenter_bits);
     u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 20, 7, 7, image_ButtonCenter_bits);
     u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 30, 7, 7, image_ButtonCenter_bits);
+    u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 40, 7, 7, image_ButtonCenter_bits);
     // Text
     u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Edit songs");
     u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playback");
     u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 20, "Equaliser");
     u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 30, "Sleep");
+    u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 40, "Back");
 }
 
 void OLEDTask() {
-    Attention_x = 64;
     switch (currentScreen->currentSelect) {
         case SELECT0:
             Attention_y = ICON_Y_ZERO;
@@ -105,10 +95,6 @@ void OLEDTask() {
         case SELECT4:
             Attention_y = ICON_Y_ZERO + 40;
             break;
-        case BACK:
-            Attention_y = ICON_Y_ZERO + 40;
-            Attention_x = 115;
-            break;
     }
 
     digitalWrite(CS_PIN, LOW);
@@ -116,17 +102,12 @@ void OLEDTask() {
     do {
         u8g2.setFontMode(1);
         u8g2.setBitmapMode(1);
-        u8g2.drawRFrame(0, 1, 126, 62, 5);
         currentScreen->drawScreen();
         //select identifier
-        u8g2.drawXBMP(Attention_x, Attention_y, 5, 8, image_Attention_bits);
+        u8g2.drawXBMP(64, Attention_y, 5, 8, image_Attention_bits);
         // song name
-        u8g2.drawXBMP(ICON_X_ZERO + 1, 55, 5, 5, image_music_note_bits);
-        u8g2.drawStr(TEXT_X_ZERO, 60, song_name_text);
-        if(currentScreen->id != 0) {
-            //only draw back arrow if not the main screen
-            u8g2.drawXBMP(115, 55, 8, 5, image_back_arrow_bits);
-        }
+        u8g2.drawXBMP(ICON_X_ZERO + 1, 56, 5, 5, image_music_note_bits);
+        u8g2.drawStr(TEXT_X_ZERO, 61, song_name_text);
     } while (u8g2.nextPage());
     digitalWrite(CS_PIN, HIGH);
 }

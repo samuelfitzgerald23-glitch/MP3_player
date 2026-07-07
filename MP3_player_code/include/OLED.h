@@ -13,8 +13,6 @@
 #define DC_PIN 5
 #define CS_PIN 6
 
-#define MAX_CHILDREN 5
-
 #define PLAYBACK_X_ZERO 82
 #define PLAYBACK_Y_ZERO 10
 
@@ -29,8 +27,7 @@ enum OLED_Select {
     SELECT1,
     SELECT2,
     SELECT3,
-    SELECT4,
-    BACK
+    SELECT4
 };
 
 struct OLED_Screen_t {
@@ -38,12 +35,10 @@ struct OLED_Screen_t {
     uint8_t N_selects;
     void (*drawScreen)();
     OLED_Select currentSelect;
-    uint8_t childrenIDs[MAX_CHILDREN];
-    uint8_t parentID;
+    uint8_t* gotoID;
 };
 
 OLED_Screen_t* getCurrentScreen();
-void changeScreen();
 void OLED_init();
 void OLED_MainScreen();
 void OLED_SettingsScreen();

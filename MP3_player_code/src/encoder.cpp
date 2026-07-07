@@ -1,16 +1,10 @@
 #include "encoder.h"
 
 void encoder_init() {
-    pinMode(ENCODER_SW_PIN, INPUT_PULLUP);
+    pinMode(ENCODER_SW_PIN, INPUT);
     pinMode(ENCODER_DT_PIN, INPUT_PULLUP);
     pinMode(ENCODER_CLK_PIN, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(ENCODER_SW_PIN), encoder_sw_isr, FALLING);
     attachInterrupt(digitalPinToInterrupt(ENCODER_CLK_PIN), encoder_clk_isr, FALLING);
-}
-
-void encoder_sw_isr() {
-    //Handle encoder button push
-    changeScreen();
 }
 
 void encoder_clk_isr() {
@@ -28,10 +22,7 @@ void encoder_clk_isr() {
         value -= 1;
     }
 
-    if ((value < 0) && (currentScreen->id != 0)) {
-        value = 5;
-    }
-    else if (value < 0) {
+    if (value < 0) {
         value = currentScreen->N_selects - 1;
     }
     else if (value >= currentScreen->N_selects) {
