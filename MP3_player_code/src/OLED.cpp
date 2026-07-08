@@ -28,43 +28,73 @@ OLED_Screen_t OLED_Screens[] = {
 };
 
 static int page = 0;
+static int page_count;
+
+static int runtimeSelects;
+
+static bool enableSelect;
+
+static bool enableScroll;
 
 static OLED_Screen_t* currentScreen = &OLED_Screens[0];
+
+
+/********************************************************************************
+ * manipulate screen state
+ */
 
 OLED_Screen_t* getCurrentScreen() {
     return currentScreen;
 }
 
+int getRuntimeSelects() {
+    return runtimeSelects;
+}
+
+int getPageN() {
+    return page;
+}
+
+int getPageCount() {
+    return page_count;
+}
+
+void setEnableScroll(bool a) {
+    enableScroll = a;
+}
+
 void changeScreen() {
     if (currentScreen->currentSelect == BACK) {
         currentScreen = &OLED_Screens[currentScreen->parentID];
-    } else {
+    } else if (enableSelect) {
         currentScreen = &OLED_Screens[currentScreen->childrenIDs[currentScreen->currentSelect]];
+        currentScreen->currentSelect = SELECT0;
+        page = 0;
+        page_count = (currentScreen->N_selects + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
+        runtimeSelects = currentScreen->N_selects;
     }
-    currentScreen->currentSelect = SELECT0;
-    page = 0;
 }
 
-void OLED_init() {
-    //I dont know why but without this the cs pin is not set to low and the oled does not work
-    pinMode(CS_PIN, OUTPUT);
-    digitalWrite(CS_PIN, LOW);
-    
-    u8g2.begin();
-    
-    u8g2.setPowerSave(0);
-    //u8g2.setContrast(255);
-    u8g2.clearBuffer();
-    u8g2.setFontMode(1);
-    u8g2.setBitmapMode(1);
-    u8g2.setFont(u8g2_font_4x6_tr);
+void scrollScreen() {
+    page++;
+    runtimeSelects -= ITEMS_PER_PAGE;
+    if (page >= page_count) {
+        page = 0;
+        runtimeSelects = currentScreen->N_selects;
+    }
 }
+
+/*********************************************************************
+ * Drawing functions
+ */
 
 void DrawOptions() {
-    for (int i = 0; i < 5; i++) {
-        if ((i+5*page) < currentScreen->N_selects) {
+    enableSelect = 1;
+    int item_offset = page*ITEMS_PER_PAGE;
+    for (int i = 0; i < ITEMS_PER_PAGE; i++) {
+        if ((i + item_offset) < currentScreen->N_selects) {
             u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + (i * 10), 7, 7, image_ButtonCenter_bits);
-            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + (i * 10), OLED_Screens[currentScreen->childrenIDs[i]].name);
+            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + (i * 10), OLED_Screens[currentScreen->childrenIDs[i + item_offset]].name);
         }
     }
 }
@@ -77,15 +107,20 @@ void OLED_MainScreen() {
     u8g2.drawXBMP(PLAYBACK_X_ZERO + 31, PLAYBACK_Y_ZERO - 6, 8, 6, image_Volup_bits);
     u8g2.drawXBMP(PLAYBACK_X_ZERO - 8, PLAYBACK_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
     u8g2.drawXBMP(PLAYBACK_X_ZERO, PLAYBACK_Y_ZERO, 31, 31, image_reccord_icon_bits);
+
+    DrawOptions();
 }
 
 void OLED_SettingsScreen() {
     // Icons
     u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
+
+    DrawOptions();
 }
 
 void OLED_TestScreen() {
     u8g2.drawStr(70, TEXT_Y_ZERO, "Test screen");
+    DrawOptions();
 }
 
 void TotalScreen() {
@@ -93,7 +128,6 @@ void TotalScreen() {
     u8g2.setBitmapMode(1);
 
     u8g2.drawRFrame(0, 1, 126, 62, 5);
-    DrawOptions();
     currentScreen->drawScreen();
     //select identifier
     u8g2.drawXBMP(Attention_x, Attention_y, 5, 8, image_Attention_bits);
@@ -104,6 +138,27 @@ void TotalScreen() {
         //only draw back arrow if not the main screen
         u8g2.drawXBMP(115, 55, 8, 5, image_back_arrow_bits);
     }
+}
+
+/**********************************************************************************
+ * overall task func (seen by main)
+ */
+
+void OLED_init() {
+    pinMode(CS_PIN, OUTPUT);
+    digitalWrite(CS_PIN, LOW);
+
+    page_count = (currentScreen->N_selects + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
+    runtimeSelects = currentScreen->N_selects;
+    
+    u8g2.begin();
+    
+    u8g2.setPowerSave(0);
+    //u8g2.setContrast(255);
+    u8g2.clearBuffer();
+    u8g2.setFontMode(1);
+    u8g2.setBitmapMode(1);
+    u8g2.setFont(u8g2_font_4x6_tr);
 }
 
 void OLEDTask() {
@@ -127,6 +182,11 @@ void OLEDTask() {
         case BACK:
             Attention_x = 115;
             Attention_y = ICON_Y_ZERO + 40;
+    }
+
+    if (enableScroll) {
+        enableScroll = 0;
+        scrollScreen();
     }
 
     u8g2.firstPage();

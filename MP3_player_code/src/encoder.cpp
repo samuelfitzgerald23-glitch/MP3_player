@@ -28,12 +28,19 @@ void encoder_clk_isr() {
         value -= 1;
     }
 
+    int n = getRuntimeSelects();
+
     if (value < 0) {
         value = -1;
-        if (currentScreen->id == 0) value = 0;
+        if (currentScreen->id == 0) value = n - 1;
     }
-    else if (value >= currentScreen->N_selects) {
+    else if (value >= n) {
         value = 0;
+        if (getPageN() == (getPageCount() - 1)) setEnableScroll(1);
+    }
+    else if (value >= ITEMS_PER_PAGE) {
+        value =  0;
+        setEnableScroll(1);
     }
 
     currentScreen->currentSelect = static_cast<OLED_Select>(value);

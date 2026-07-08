@@ -5,9 +5,9 @@
 #include "OLED.h"
 #include <stdint.h>
 
-#define ENCODER_SW_PIN 18
-#define ENCODER_DT_PIN 17
-#define ENCODER_CLK_PIN 16
+#define ENCODER_SW_PIN 22
+#define ENCODER_DT_PIN 21
+#define ENCODER_CLK_PIN 20
 
 void encoder_init();
 void encoder_sw_isr();
