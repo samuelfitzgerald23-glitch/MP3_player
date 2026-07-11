@@ -22,9 +22,9 @@ const char* song_name_text = "Song name - Artist";
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
 OLED_Screen_t OLED_Screens[] = {
-    {0, 2, OLED_MainScreen, SELECT0, {1, 2}, 0, "Main"},
-    {1, 4, OLED_SettingsScreen, SELECT0, {0, 0, 0, 0}, 0, "Settings"},
-    {2, 5, OLED_TestScreen, SELECT0, {0, 0, 0, 0, 0}, 0, "Playlists"}
+    {0, 2, OLED_MainScreen, SELECT0, {1, 1}, 0, "Main"},
+    {1, 4, OLED_SettingsScreen, SELECT0, {2, 2, 2, 2}, 0, "Settings"},
+    {2, 6, OLED_TestScreen, SELECT0, {0, 0, 0, 0, 0, 0}, 1, "Test"}
 };
 
 static int page = 0;
@@ -112,14 +112,14 @@ void OLED_MainScreen() {
 }
 
 void OLED_SettingsScreen() {
+    // Icons
     u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
-    u8g2.drawStr(78, TEXT_Y_ZERO, currentScreen->name);
+
     DrawOptions();
 }
 
 void OLED_TestScreen() {
-    u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
-    u8g2.drawStr(78, TEXT_Y_ZERO, currentScreen->name);
+    u8g2.drawStr(70, TEXT_Y_ZERO, "Test screen");
     DrawOptions();
 }
 
