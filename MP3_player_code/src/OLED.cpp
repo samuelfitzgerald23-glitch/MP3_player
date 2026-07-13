@@ -17,144 +17,155 @@ static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8
 static int Attention_y = ICON_Y_ZERO;
 static int Attention_x = 64;
 
-const char* song_name_text = "Song name - Artist";
+static const char* song_name_text = "Song name - Artist";
+
+static bool enableScroll = 0;
+
+static int brightness = 127;
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
-OLED_Screen_t OLED_Screens[] = {
-    {0, 2, OLED_MainScreen, SELECT0, {1, 2}, 0, "Main"},
-    {1, 4, OLED_SettingsScreen, SELECT0, {0, 0, 0, 0}, 0, "Settings"},
-    {2, 5, OLED_TestScreen, SELECT0, {0, 0, 0, 0, 0}, 0, "Playlists"}
-};
+static screen_t screen = {0, 0, SELECT0, 0, 0};
 
-static int page = 0;
-static int page_count;
+/**********************************************************/
+//getters
 
-static int runtimeSelects;
-
-static bool enableSelect;
-
-static bool enableScroll;
-
-static OLED_Screen_t* currentScreen = &OLED_Screens[0];
-
-
-/********************************************************************************
- * manipulate screen state
- */
-
-OLED_Screen_t* getCurrentScreen() {
-    return currentScreen;
+screen_t* getScreen() {
+    return &screen;
 }
 
 int getRuntimeSelects() {
-    return runtimeSelects;
+    return screen.runtimeSelects;
 }
 
-int getPageN() {
-    return page;
-}
-
-int getPageCount() {
-    return page_count;
-}
+/**********************************************************/
+//screen manipulation functions
 
 void setEnableScroll(bool a) {
     enableScroll = a;
 }
 
-void changeScreen() {
-    if (currentScreen->currentSelect == BACK) {
-        currentScreen = &OLED_Screens[currentScreen->parentID];
-    } else if (enableSelect) {
-        currentScreen = &OLED_Screens[currentScreen->childrenIDs[currentScreen->currentSelect]];
-        currentScreen->currentSelect = SELECT0;
-        page = 0;
-        page_count = (currentScreen->N_selects + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
-        runtimeSelects = currentScreen->N_selects;
-    }
+void changeBrightness(int a) {
+    brightness = std::clamp(brightness + 17*a, 0, 255);
+}
+
+void resetScreen(state_t* state) {
+    int n = state->numChildren;
+    screen.currentSelect = SELECT0;
+    screen.page = 0;
+    screen.pageCount = (n + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
+    screen.N_selects = n;
+    screen.runtimeSelects = n;
 }
 
 void scrollScreen() {
-    page++;
-    runtimeSelects -= ITEMS_PER_PAGE;
-    if (page >= page_count) {
-        page = 0;
-        runtimeSelects = currentScreen->N_selects;
+    screen.page++;
+    screen.runtimeSelects -= ITEMS_PER_PAGE;
+    if (screen.page >= screen.pageCount) {
+        screen.page = 0;
+        screen.runtimeSelects = getState()->numChildren;
     }
 }
 
-/*********************************************************************
- * Drawing functions
- */
+/*************************************************************************/
+//screen drawing functions
 
-void DrawOptions() {
-    enableSelect = 1;
-    int item_offset = page*ITEMS_PER_PAGE;
+void DrawStateOptions(state_t* state) {
+    int item_offset = screen.page*ITEMS_PER_PAGE;
     for (int i = 0; i < ITEMS_PER_PAGE; i++) {
-        if ((i + item_offset) < currentScreen->N_selects) {
+        if ((i + item_offset) < state->numChildren) {
+            state_t* child = state->childrenStates[i];
             u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + (i * 10), 7, 7, image_ButtonCenter_bits);
-            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + (i * 10), OLED_Screens[currentScreen->childrenIDs[i + item_offset]].name);
+            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + (i * 10), child->displayName);
         }
     }
 }
 
-void OLED_MainScreen() {
-    // Playback icons
-    u8g2.drawXBMP(PLAYBACK_X_ZERO + 7, PLAYBACK_Y_ZERO + 34, 3, 5, image_back_button_bits);
-    u8g2.drawXBMP(PLAYBACK_X_ZERO + 21, PLAYBACK_Y_ZERO + 34, 3, 5, image_skip_button_bits);
-    u8g2.drawXBMP(PLAYBACK_X_ZERO + 14, PLAYBACK_Y_ZERO + 34, 3, 5, image_pause_bits);
-    u8g2.drawXBMP(PLAYBACK_X_ZERO + 31, PLAYBACK_Y_ZERO - 6, 8, 6, image_Volup_bits);
-    u8g2.drawXBMP(PLAYBACK_X_ZERO - 8, PLAYBACK_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
-    u8g2.drawXBMP(PLAYBACK_X_ZERO, PLAYBACK_Y_ZERO, 31, 31, image_reccord_icon_bits);
+void drawScreen(state_t* state) {
 
-    DrawOptions();
-}
-
-void OLED_SettingsScreen() {
-    u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
-    u8g2.drawStr(78, TEXT_Y_ZERO, currentScreen->name);
-    DrawOptions();
-}
-
-void OLED_TestScreen() {
-    u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
-    u8g2.drawStr(78, TEXT_Y_ZERO, currentScreen->name);
-    DrawOptions();
-}
-
-void TotalScreen() {
+    u8g2.setContrast(brightness);
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
 
+    //draw the frame
     u8g2.drawRFrame(0, 1, 126, 62, 5);
-    currentScreen->drawScreen();
+
     //select identifier
     u8g2.drawXBMP(Attention_x, Attention_y, 5, 8, image_Attention_bits);
+
     //song name
     u8g2.drawXBMP(ICON_X_ZERO + 1, 55, 5, 5, image_music_note_bits);
     u8g2.drawStr(TEXT_X_ZERO, 60, song_name_text);
-    if(currentScreen->id != 0) {
-        //only draw back arrow if not the main screen
+
+    //only draw back arrow if not on the start screen
+    if(state->name != START) {
         u8g2.drawXBMP(115, 55, 8, 5, image_back_arrow_bits);
+        u8g2.drawStr(78, TEXT_Y_ZERO, state->displayName);
+    }
+
+    if(state->childrenStates[0] != nullptr) DrawStateOptions(state);
+
+
+    switch (state->name) {
+        case START:
+            //draw start screen stuff
+
+            u8g2.drawXBMP(ART_X_ZERO + 7, ART_Y_ZERO + 34, 3, 5, image_back_button_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 21, ART_Y_ZERO + 34, 3, 5, image_skip_button_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 14, ART_Y_ZERO + 34, 3, 5, image_pause_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 31, ART_Y_ZERO - 6, 8, 6, image_Volup_bits);
+            u8g2.drawXBMP(ART_X_ZERO - 8, ART_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
+            u8g2.drawXBMP(ART_X_ZERO, ART_Y_ZERO, 31, 31, image_reccord_icon_bits);
+            break;
+        case SETTINGS:
+            //draw setting screen stuff
+
+            u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);            
+            break;
+        case PLAYLISTS:
+            //draw playlists
+
+            u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
+            screen.currentSelect = BACK;
+            break;
+        case SONGS:
+            //draw songs in selected playlist
+
+            u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
+            screen.currentSelect = BACK;
+            break;
+        case EQUALISER:
+            //draw equaliser slider
+
+            screen.currentSelect = BACK;
+            break;
+        case PLAYBACK:
+            //draw playback options
+            screen.currentSelect = BACK;
+            break;
+        case BRIGHTNESS:
+            //draw brightness slider
+
+            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, (const char*)brightness);
+            screen.currentSelect = BACK;
+            break;
+        default:
+            break;
     }
 }
 
-/**********************************************************************************
- * overall task func (seen by main)
- */
+/**************************************************************************/
+//task funcs used by main
 
 void OLED_init() {
     pinMode(CS_PIN, OUTPUT);
-    digitalWrite(CS_PIN, LOW);
 
-    page_count = (currentScreen->N_selects + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
-    runtimeSelects = currentScreen->N_selects;
+    resetScreen(getState());
     
     u8g2.begin();
     
     u8g2.setPowerSave(0);
-    //u8g2.setContrast(255);
+    u8g2.setContrast(brightness);
     u8g2.clearBuffer();
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
@@ -163,7 +174,7 @@ void OLED_init() {
 
 void OLEDTask() {
     Attention_x = 64;
-    switch (currentScreen->currentSelect) {
+    switch (screen.currentSelect) {
         case SELECT0:
             Attention_y = ICON_Y_ZERO;
             break;
@@ -189,8 +200,10 @@ void OLEDTask() {
         scrollScreen();
     }
 
+    digitalWrite(CS_PIN, 0);
     u8g2.firstPage();
     do {
-        TotalScreen();
+        drawScreen(getState());
     } while (u8g2.nextPage());
+    digitalWrite(CS_PIN, 1);
 }

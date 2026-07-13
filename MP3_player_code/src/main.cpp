@@ -6,6 +6,8 @@ void setup() {
     disable_interrupts();
     Serial.begin(115200);
 
+    stateInit();
+
     OLED_init();
     encoder_init();
     
@@ -13,6 +15,7 @@ void setup() {
 }
 
 void loop() {
+    encoderTask();
     OLEDTask();
-    delay(10);
+    delay(50);
 }

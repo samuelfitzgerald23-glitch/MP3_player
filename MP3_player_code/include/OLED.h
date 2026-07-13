@@ -6,7 +6,8 @@
 #include <U8g2lib.h>
 #include <Arduino.h>
 #include <SPI.h>
-#include <algorithm>
+
+#include "state.h"
 
 #define SCL_PIN 2
 #define SDA_PIN 3
@@ -14,11 +15,10 @@
 #define DC_PIN 5
 #define CS_PIN 6
 
-#define MAX_CHILDREN 10
 #define ITEMS_PER_PAGE 5
 
-#define PLAYBACK_X_ZERO 82
-#define PLAYBACK_Y_ZERO 10
+#define ART_X_ZERO 82
+#define ART_Y_ZERO 10
 
 #define TEXT_X_ZERO 16
 #define TEXT_Y_ZERO 11
@@ -35,37 +35,28 @@ enum OLED_Select {
     SELECT4
 };
 
-struct OLED_Screen_t {
-    uint8_t id;
-    uint8_t N_selects;
-    void (*drawScreen)();
+struct screen_t {
+    int page;
+    int pageCount;
     OLED_Select currentSelect;
-    uint8_t childrenIDs[MAX_CHILDREN];
-    uint8_t parentID;
-    const char* name;
+    int N_selects;
+    int runtimeSelects;
 };
 
 //getters
-OLED_Screen_t* getCurrentScreen();
+screen_t* getScreen();
 int getRuntimeSelects();
-int getPageN();
-int getPageCount();
-void setEnableScroll(bool a);
 
-// screen manipulation
-void changeScreen();
+//screen manipulation
+void resetScreen(state_t* state);
+void setEnableScroll(bool a);
+void changeBrightness(int a);
 void scrollScreen();
 
-// screen specific functions
-void OLED_MainScreen();
-void OLED_SettingsScreen();
-void OLED_TestScreen();
+//drawing funcs
+void DrawStateOptions(state_t* state);
+void drawScreen(state_t* state);
 
-//general screen functions
-void TotalScreen();
-void DrawOptions();
-
-// functions used by main
 void OLED_init();
 void OLEDTask();
 
