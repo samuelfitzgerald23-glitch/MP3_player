@@ -16,13 +16,6 @@ enum STATEID {
     BRIGHTNESS
 };
 
-enum action_t {
-    NOACTION = -1,
-    SELECT,
-    PLAY,
-    ADJUST
-};
-
 struct state_t {
     int id;                                 //corrosponds to the index in the parents children array
     int numChildren;                        //number of children states I have
@@ -32,7 +25,6 @@ struct state_t {
     state_t* childrenStates[MAX_CHILDREN];  //a list of the next states
     STATEID name;                           //
     const char* displayName;                //name for display on screen
-    void (*displayScreen)();                //what to draw on the screen while in this state
 };
 
 state_t* getState();

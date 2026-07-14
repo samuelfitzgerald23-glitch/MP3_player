@@ -165,7 +165,6 @@ void OLED_init() {
     u8g2.begin();
     
     u8g2.setPowerSave(0);
-    u8g2.setContrast(brightness);
     u8g2.clearBuffer();
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
@@ -200,10 +199,13 @@ void OLEDTask() {
         scrollScreen();
     }
 
-    digitalWrite(CS_PIN, 0);
+    //set gpio 6 (cs) with port manipulation
+    sio_hw->gpio_togl = 1u << 6;
+
     u8g2.firstPage();
     do {
         drawScreen(getState());
     } while (u8g2.nextPage());
-    digitalWrite(CS_PIN, 1);
+
+    sio_hw->gpio_togl = 1u << 6;
 }
