@@ -50,7 +50,6 @@ int getRuntimeSelects();
 //screen manipulation
 void resetScreen(state_t* state);
 void setEnableScroll(bool a);
-void changeBrightness(int a);
 void scrollScreen();
 
 //drawing funcs
