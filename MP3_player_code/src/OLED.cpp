@@ -21,7 +21,7 @@ static const char* song_name_text = "Song name - Artist";
 
 static bool enableScroll = 0;
 
-static int brightness = 127;
+static uint8_t brightness = 120;
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
 
@@ -46,7 +46,7 @@ void setEnableScroll(bool a) {
 }
 
 void changeBrightness(int a) {
-    brightness = std::clamp(brightness + 17*a, 0, 255);
+    brightness = std::clamp((brightness + 17*a), 0, 255);
 }
 
 void resetScreen(state_t* state) {
@@ -82,8 +82,6 @@ void DrawStateOptions(state_t* state) {
 }
 
 void drawScreen(state_t* state) {
-
-    u8g2.setContrast(brightness);
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
 
@@ -136,7 +134,8 @@ void drawScreen(state_t* state) {
             break;
         case EQUALISER:
             //draw equaliser slider
-
+            u8g2.drawLine(2, 32, 125, 32);
+            u8g2.drawBox(60, 30, 8, 5);
             screen.currentSelect = BACK;
             break;
         case PLAYBACK:
@@ -145,8 +144,12 @@ void drawScreen(state_t* state) {
             break;
         case BRIGHTNESS:
             //draw brightness slider
+            u8g2.drawLine(2, 32, 125, 32);
+            u8g2.drawBox(map(brightness, 0, 255, 4, 118), 30, 8, 5);
 
-            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, (const char*)brightness);
+            u8g2.setCursor(TEXT_X_ZERO, TEXT_Y_ZERO);
+            u8g2.print("Brightness:");
+            u8g2.print(brightness);
             screen.currentSelect = BACK;
             break;
         default:
@@ -198,6 +201,8 @@ void OLEDTask() {
         enableScroll = 0;
         scrollScreen();
     }
+
+    u8g2.setContrast(brightness);
 
     //set gpio 6 (cs) with port manipulation
     sio_hw->gpio_togl = 1u << 6;

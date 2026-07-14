@@ -10,6 +10,7 @@ enum STATEID {
     START,
     SETTINGS,
     PLAYLISTS,
+    TEXT,
     SONGS,
     EQUALISER,
     PLAYBACK,
