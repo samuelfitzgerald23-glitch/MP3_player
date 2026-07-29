@@ -1,6 +1,5 @@
 #include "OLED.h"
 
-
 // Bitmap data for the images
 static const unsigned char image_Attention_bits[] U8X8_PROGMEM = {0x0e,0x0a,0x0a,0x0a,0x0e,0x04,0x00,0x0e};
 static const unsigned char image_back_button_bits[] U8X8_PROGMEM = {0x04,0x06,0x07,0x06,0x04};
@@ -23,7 +22,7 @@ static bool enableScroll = 0;
 
 static uint8_t brightness = 120;
 
-U8G2_SSD1309_128X64_NONAME2_F_4W_SW_SPI u8g2(U8G2_R0, SCL_PIN, SDA_PIN, CS_PIN, DC_PIN, RESET_PIN);
+U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 
 static screen_t screen = {0, 0, SELECT0, 0, 0};
 
@@ -161,11 +160,10 @@ void drawScreen(state_t* state) {
 //task funcs used by main
 
 void OLED_init() {
-    pinMode(CS_PIN, OUTPUT);
-
     resetScreen(getState());
     
     u8g2.begin();
+    //pinMode(CS_PIN, OUTPUT);
     
     u8g2.setPowerSave(0);
     u8g2.clearBuffer();
@@ -205,12 +203,12 @@ void OLEDTask() {
     u8g2.setContrast(brightness);
 
     //set gpio 6 (cs) with port manipulation
-    sio_hw->gpio_togl = 1u << 6;
+    //sio_hw->gpio_togl = 1u << OLED_CS_PIN;
 
     u8g2.firstPage();
     do {
         drawScreen(getState());
     } while (u8g2.nextPage());
 
-    sio_hw->gpio_togl = 1u << 6;
+    //sio_hw->gpio_togl = 1u << OLED_CS_PIN;
 }

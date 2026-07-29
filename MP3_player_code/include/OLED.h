@@ -5,15 +5,9 @@
 
 #include <U8g2lib.h>
 #include <Arduino.h>
-#include <SPI.h>
+#include "SPI_HAL.h"
 
 #include "state.h"
-
-#define SCL_PIN 2
-#define SDA_PIN 3
-#define RESET_PIN 4
-#define DC_PIN 5
-#define CS_PIN 6
 
 #define ITEMS_PER_PAGE 5
 

@@ -7,9 +7,9 @@
 #include "OLED.h"
 #include "state.h"
 
-#define ENCODER_SW_PIN 22
-#define ENCODER_DT_PIN 21
-#define ENCODER_CLK_PIN 20
+#define ENCODER_SW_PIN 11
+#define ENCODER_DT_PIN 13
+#define ENCODER_CLK_PIN 12
 
 void encoder_sw_isr();
 void encoder_clk_isr();

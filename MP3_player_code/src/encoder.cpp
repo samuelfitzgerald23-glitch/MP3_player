@@ -21,7 +21,7 @@ void encoder_sw_isr() {
 
 void encoder_clk_isr() {
     // Handle the encoder rotation event
-    if (digitalRead(ENCODER_CLK_PIN) == digitalRead(ENCODER_DT_PIN)) {
+    if (gpio_get(ENCODER_CLK_PIN) == gpio_get(ENCODER_DT_PIN)) {
         //positive rotation
         positiveRotation = 1;
     }
