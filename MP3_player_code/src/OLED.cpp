@@ -20,7 +20,7 @@ static const char* song_name_text = "Song name - Artist";
 
 static bool enableScroll = 0;
 
-static uint8_t brightness = 120;
+static uint8_t brightness = 255;
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 

@@ -1,18 +1,17 @@
-#include <SD.h>
+#include <SdFat.h>
 #include "SPI_HAL.h"
 
-File currentDir;
-File currentFile;
+SdFat SD;
 
 bool isMP3 = 0;
 bool isTXT = 0;
 
 void SD_init() {
-
-    if(!SD.begin(SD_CS_PIN, SPI)) {
-        Serial.print("SD card failed");
-        while(1) {};
+    if (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(4))) {
+        SD.initErrorHalt(&Serial);
     }
+}
 
-    currentDir = SD.open("/");
+void getMetaData(const char *filename, char *titleOut, char *artistOut) {
+    
 }

@@ -10,14 +10,16 @@ void setup() {
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, 1);
+    delay(100);
+    digitalWrite(LED_BUILTIN, 0);
 
     Serial.println("Enableing SPI");
     SPI_init();
 
     stateInit();
 
-    //Serial.println("Enableing SD card");
-    //SD_init();
+    Serial.println("Enableing SD card");
+    SD_init();
 
     Serial.println("Enableing OLED screen");
     OLED_init();
