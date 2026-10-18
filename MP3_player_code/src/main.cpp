@@ -1,10 +1,8 @@
 #include <Arduino.h>
 #include "sd_card.h"
-#include "SPI_HAL.h"
+#include "OLED.h"
 
 #define BAURD_RATE 9600
-
-bool sd_state;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -15,9 +13,13 @@ void setup() {
   SPI_init();
   if(!SD_init()) {
     digitalWrite(LED_BUILTIN, LOW);
+    set_sdState(0);
+  } else {
+    set_sdState(1);
   }
-
+  OLED_init();
 }
 
 void loop() {
+  OLED_task();
 }
