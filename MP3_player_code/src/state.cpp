@@ -57,6 +57,7 @@ void State_Playlist::handle_push() {
 
     if (oled->current_select == BACK) {
         if (level == 1) { show_playlists(); return; }   // up one level
+        clearCashe();                                   //clear cashe of file names
         context_->transition_to(new State_Home());      // leave the state
         return;
     }
@@ -72,7 +73,8 @@ void State_Playlist::handle_push() {
     } else {
         char path[160];
         snprintf(path, sizeof(path), "/playlists/%s/%s", playlist, getListName(idx));
-        // hand `path` to the player here
+        clearCashe();
+        context_->transition_to(new State_Playing(path, idx));
     }
 }
 
@@ -89,5 +91,17 @@ State_Playing::State_Playing(const char* playlist, int start_index)
     for (int i = 0; i < count_; i++) {
         strncpy(queue_[i], getListName(i), LIST_NAME_LEN - 1);
         queue_[i][LIST_NAME_LEN - 1] = '\0';
+    }
+}
+
+void State_Playing::setScreen() {
+
+}
+
+void State_Playing::handle_push() {
+    //play song or go back
+    OLED_Screen* oled = getOLEDScreen();
+    if (oled->current_select == BACK) {
+        context_->transition_to(new State_Playlist());
     }
 }

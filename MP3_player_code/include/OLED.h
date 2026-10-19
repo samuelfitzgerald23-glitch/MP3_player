@@ -36,6 +36,7 @@ enum OLED_STATE {
     HOME_SCREEN,
     SETTINGS_SCREEN,
     PLAYLIST_SCREEN,
+    PLAYING_SCREEN
 };
 
 class OLED_Screen {
@@ -59,7 +60,7 @@ class OLED_Screen {
                 case SETTINGS_SCREEN:
                     num_selects = 7;
                     break;
-                case PLAYLIST_SCREEN:
+                default:
                     num_selects = count;
                     break;
             }

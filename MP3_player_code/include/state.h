@@ -136,11 +136,19 @@ class State_Playing : public State {
     public:
         State_Playing(const char* playlist, int start_index);
         void handle_push() override;
-        void handle_rot(int dir) override;
+        void handle_rot(int dir) override {
+            scroll_screen(dir, getOLEDScreen());
+        }
         void setScreen() override;
 
         void current_path(char* out, size_t n) {
             snprintf(out, n, "/playlists/%s/%s", playlist_, queue_[idx_]);
+        }
+
+        int getIdx() {return idx_;}
+
+        const char* getQueueAtIdx(int i) {
+            return (i >= 0 && i < count_) ? queue_[i] : "";
         }
 };
 

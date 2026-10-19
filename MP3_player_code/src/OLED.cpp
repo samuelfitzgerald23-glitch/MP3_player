@@ -94,6 +94,10 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
                 u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + i * 10, getListName(idx));
             }
             break;
+        case PLAYING_SCREEN:
+            u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
+            
+            break;
     }
 
 }
