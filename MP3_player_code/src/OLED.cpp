@@ -76,8 +76,8 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
             u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
             u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO, 9, 9, image_gear_bits);
 
-            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Playlists");
-            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO, 5, 5, image_music_note_bits);
+            u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
+            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 5, 5, image_music_note_bits);
             break;
         case SETTINGS_SCREEN:
             u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);

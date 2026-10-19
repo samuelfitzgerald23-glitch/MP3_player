@@ -44,6 +44,8 @@ void loop() {
     cxt->request_push();
   }
 
+  Serial.println(getOLEDScreen()->oled_state);
+
   OLED_task();
   delay(20);
 }

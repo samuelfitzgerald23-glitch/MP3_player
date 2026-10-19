@@ -5,6 +5,9 @@
 #include "sd_card.h"
 #include "OLED.h"
 
+void scroll_screen(int dir, OLED_Screen* oled_screen);
+void scroll_files(int dir);
+
 class context;
 
 class State {
@@ -78,13 +81,7 @@ class State_Home : public State {
     private:
         bool scrolling = false;
     public:
-        void handle_push() override {
-            switch(getOLEDScreen()->current_select) {
-                case SELECT0: context_->transition_to(new State_Settings());
-                case SELECT1: context_->transition_to(new State_Playlist());
-                default: return;
-            }
-        }
+        void handle_push() override;
         void handle_rot(int dir) override {
             scroll_screen(dir, getOLEDScreen());
         }
@@ -98,9 +95,9 @@ class State_Settings : public State {
     public:
         void handle_push() override {
             switch(getOLEDScreen()->current_select) {
-                case BACK: context_->transition_to(new State_Home());
-                case SELECT0: return;
-                case SELECT1: return;
+                case BACK: 
+                    context_->transition_to(new State_Home());
+                    return;
                 default: return;
             }
         }
@@ -117,9 +114,9 @@ class State_Playlist : public State {
     public:
         void handle_push() override {
             switch(getOLEDScreen()->current_select) {
-                case BACK: context_->transition_to(new State_Home());
-                case SELECT0: return;
-                case SELECT1: return;
+                case BACK: 
+                    context_->transition_to(new State_Home());
+                    return;
                 default: return;
             }
         }
