@@ -75,3 +75,19 @@ void State_Playlist::handle_push() {
         // hand `path` to the player here
     }
 }
+
+/***************************************************************************************************************
+ * playing state methods
+ */
+
+State_Playing::State_Playing(const char* playlist, int start_index) 
+    : count_(getListCount()), idx_(start_index) {
+
+    strncpy(playlist_, playlist, LIST_NAME_LEN - 1);
+    playlist_[LIST_NAME_LEN - 1] = '\0';
+
+    for (int i = 0; i < count_; i++) {
+        strncpy(queue_[i], getListName(i), LIST_NAME_LEN - 1);
+        queue_[i][LIST_NAME_LEN - 1] = '\0';
+    }
+}

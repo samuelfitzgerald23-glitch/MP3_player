@@ -127,4 +127,21 @@ class State_Playlist : public State {
         }
 };
 
+class State_Playing : public State {
+    private:
+        char playlist_[LIST_NAME_LEN];
+        char* queue_[MAX_LIST_ITEMS];
+        int count_;
+        int idx_;
+    public:
+        State_Playing(const char* playlist, int start_index);
+        void handle_push() override;
+        void handle_rot(int dir) override;
+        void setScreen() override;
+
+        void current_path(char* out, size_t n) {
+            snprintf(out, n, "/playlists/%s/%s", playlist_, queue_[idx_]);
+        }
+};
+
 #endif // STATE_H
