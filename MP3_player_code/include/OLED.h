@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include "SPI_HAL.h"
-#include "encoder.h"
+#include "sd_card.h"
 
 #define ZERO_X 0
 #define ZERO_Y 1
@@ -17,6 +17,9 @@
 
 #define ICON_X_ZERO (ZERO_X + 2)
 #define ICON_Y_ZERO (ZERO_Y + 3)
+
+#define BACK_X_ZERO (ZERO_X + 115)
+#define BACK_Y_ZERO (ZERO_Y + 53)
 
 #define ITEMS_PER_PAGE 5
 
@@ -47,17 +50,17 @@ class OLED_Screen {
         int running_selects;
         OLED_Select current_select = SELECT0;
 
-        void set_state(OLED_STATE state) {
+        void set_state(OLED_STATE state, int count = 0) {
             oled_state = state;
             switch(state) {
                 case HOME_SCREEN:
                     num_selects = 2;
                     break;
                 case SETTINGS_SCREEN:
-                    num_selects = 3;
+                    num_selects = 7;
                     break;
                 case PLAYLIST_SCREEN:
-                    num_selects = 5;
+                    num_selects = count;
                     break;
             }
             reset_screen(num_selects);
@@ -74,6 +77,8 @@ class OLED_Screen {
                 running_selects = num_selects - (page * ITEMS_PER_PAGE);
             }
         }
+
+        int getPage() const {return page;}
 
         void reset_screen(int n) {
             current_select = SELECT0;
@@ -97,7 +102,7 @@ class OLED_Screen {
 
 OLED_Screen* getOLEDScreen();
 
-void setOLEDState(OLED_STATE state);
+void setOLEDState(OLED_STATE state, int count = 0);
 void toggle_back(bool a);
 
 void OLED_init();

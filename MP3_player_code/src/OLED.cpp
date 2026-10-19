@@ -34,8 +34,8 @@ OLED_Screen* getOLEDScreen() {
     return &oled_screen;
 }
 
-void setOLEDState(OLED_STATE state) {
-    oled_screen.set_state(state);
+void setOLEDState(OLED_STATE state, int count) {
+    oled_screen.set_state(state, count);
 }
 
 void toggle_back(bool a) {
@@ -55,10 +55,10 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
 
     switch(oled_screen.current_select) {
         case BACK:
-            u8g2.drawXBMP(100, ICON_Y_ZERO + 40, 5, 8, image_Attention_bits);
+            u8g2.drawXBMP(BACK_X_ZERO - 15, BACK_Y_ZERO, 5, 8, image_Attention_bits);
             break;
         default:
-            u8g2.drawXBMP(64, ICON_Y_ZERO + 10*static_cast<int>(oled_screen.current_select), 5, 8, image_Attention_bits);
+            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10*static_cast<int>(oled_screen.current_select), 5, 8, image_Attention_bits);
             break;
     }
 
@@ -74,16 +74,25 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
 
             //select options
             u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "Settings");
-            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO, 9, 9, image_gear_bits);
 
             u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + 10, "Playlists");
-            u8g2.drawXBMP(ICON_X_ZERO, ICON_Y_ZERO + 10, 5, 5, image_music_note_bits);
             break;
         case SETTINGS_SCREEN:
             u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
             break;
         case PLAYLIST_SCREEN:
             u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
+            int count = getListCount();
+            if (count == 0) {
+                u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO, "No playlists found");
+                break;
+            }
+
+            for (int i = 0; i < ITEMS_PER_PAGE; i++) {
+                int idx = oled_screen.getPage() * ITEMS_PER_PAGE + i;
+                if (idx >= count) break;
+                u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + i * 10, getListName(idx));
+            }
             break;
     }
 

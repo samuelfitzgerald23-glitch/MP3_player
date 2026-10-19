@@ -111,21 +111,19 @@ class State_Settings : public State {
 };
 
 class State_Playlist : public State {
+    private:
+        int  level = 0;                       // 0 = playlist list, 1 = songs
+        char playlist[LIST_NAME_LEN] = {0};   // chosen playlist folder
+        void show_playlists();
+        void show_songs();
     public:
-        void handle_push() override {
-            switch(getOLEDScreen()->current_select) {
-                case BACK: 
-                    context_->transition_to(new State_Home());
-                    return;
-                default: return;
-            }
-        }
+        void handle_push() override;
         void handle_rot(int dir) override {
-            scroll_files(dir);
+            scroll_screen(dir, getOLEDScreen());
         }
         void setScreen() override {
-            setOLEDState(PLAYLIST_SCREEN);
             toggle_back(1);
+            show_playlists();
         }
 };
 
