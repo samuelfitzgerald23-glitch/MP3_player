@@ -72,12 +72,48 @@ static uint32_t readSynchsafeInt(uint8_t *bytes) {
          ((bytes[2] & 0x7F) << 7)  | (bytes[3] & 0x7F);
 }
 
-static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = 64) {
+static inline void readAtPos(FsFile &file, uint64_t pos, uint8_t* output, size_t bytes) {
+    file.seek(pos);
+    file.read(output, bytes);
+    output[bytes] = '\0';
+    for (int i = TAGV1SIZE - 1; i >= 0 && (output[i] == '\0' || output[i] == ' '); i--) output[i] = '\0';
+}
+
+// enc: 0 = Latin-1, 1 = UTF-16 with BOM, 2 = UTF-16BE, 3 = UTF-8
+// Output is ASCII only (your 4x6 font can't draw more); other characters become '?'
+static void decodeText(const uint8_t* raw, size_t len, uint8_t enc, char* out, size_t outSize) {
+    size_t o = 0;
+    if (enc == 1 || enc == 2) {
+        bool le = false;
+        size_t i = 0;
+        if (enc == 1 && len >= 2) {
+            if (raw[0] == 0xFF && raw[1] == 0xFE)      { le = true; i = 2; }
+            else if (raw[0] == 0xFE && raw[1] == 0xFF) { i = 2; }
+        }
+        for (; i + 1 < len && o < outSize - 1; i += 2) {
+            uint8_t lo = le ? raw[i]     : raw[i + 1];
+            uint8_t hi = le ? raw[i + 1] : raw[i];
+            if (lo == 0 && hi == 0) break;
+            out[o++] = (hi == 0 && lo >= 32 && lo < 127) ? (char)lo : '?';
+        }
+    } else {
+        for (size_t i = 0; i < len && o < outSize - 1; i++) {
+            if (raw[i] == 0) break;
+            out[o++] = (raw[i] >= 32 && raw[i] < 127) ? (char)raw[i] : '?';
+        }
+    }
+    out[o] = '\0';
+}
+
+static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
     file.seek(0);   //go to start of file
     uint8_t header[10];
     file.read(header, 10);
 
-    if (strncmp((char*)header, "ID3", 3) != 0) return 0;    //not tagv2
+    if (memcmp(header, "ID3", 3) != 0) return 0;    //not tagv2
+
+    uint8_t version = header[3];
+    if(version < 3) return 0;
 
     uint32_t tagSize = readSynchsafeInt(&header[6]);
     uint32_t pos = 10;
@@ -89,33 +125,86 @@ static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = 64) {
         file.seek(pos);
         if(file.read(frameheader, 10) != 10) break;
 
-        uint32_t frameSize = (frameheader[4] << 24) | (frameheader[5] << 16) | (frameheader[6] << 8) | (frameheader[7]);
+        uint32_t frameSize = (version == 4) 
+        ? readSynchsafeInt(&frameheader[4]) 
+        : (frameheader[4] << 24) | (frameheader[5] << 16) | (frameheader[6] << 8) | (frameheader[7]);
+
         if (frameSize == 0 || frameSize > tagSize) break; // sanity check, avoid junk/padding
 
-        if(strncmp((char*)frameheader, (char*)TAGV2ARTIST, 4) == 0) {
-            file.seek(pos+10+1);
-            size_t toRead = min(frameSize-1, bufSize-1);
-            file.read((uint8_t*)outBufs->artist, toRead);
-            outBufs->artist[toRead] = '\0';
-        } else if(strncmp((char*)frameheader, (char*)TAGV2SONG_NAME, 4) == 0) {
-            file.seek(pos+10+1);
-            size_t toRead = min(frameSize-1, bufSize-1);
-            file.read((uint8_t*)outBufs->song, toRead);
-            outBufs->song[toRead] = '\0';
+        bool isTitle = memcmp(frameheader, TAGV2TITLE, 4) == 0;
+        bool isArtist = memcmp(frameheader, TAGV2ARTIST, 4) == 0;
+
+        if (isTitle || isArtist) {
+            uint8_t raw[2 * TAGARRAYSIZE + 2];
+            size_t toRead = frameSize < sizeof(raw) ? frameSize : sizeof(raw);
+            int n = file.read(raw, toRead);              // already positioned after the header
+            if (n > 1) {
+                char* dst = isArtist ? outBufs->artist : outBufs->song;
+                decodeText(raw + 1, n - 1, raw[0], dst, TAGARRAYSIZE);
+                (isArtist ? artistFilled : songFilled) = 1;
+            }
         }
-        if(artistFilled && songFilled) return 1;
+        if(artistFilled && songFilled) {
+            outBufs->ID = 2;
+            return 1;
+        }
+
+        pos += 10 + frameSize;
     }
+    if(artistFilled || songFilled) {
+            outBufs->ID = 2;
+            return 1;
+        }
+
     return 0;
 }
 
 static bool Tagv1(FsFile &file, Tag_t *outBufs) {
+    uint64_t size = file.size();
+    if(size < 128) return 0;
+    uint64_t header_start = size - 128;
+    if(!file.seek(header_start)) return 0;
 
+    char header[3];
+    file.read(header, 3);
+    if(memcmp(header, "TAG", 3) != 0) return 0;    //no v1 tag
+
+    readAtPos(file, header_start + TAGV1TITLESTART, (uint8_t*)outBufs->song, TAGV1SIZE);
+    outBufs->song[30] = '\0';
+
+    readAtPos(file, header_start + TAGV1ARTISTSTART, (uint8_t*)outBufs->artist, TAGV1SIZE);
+    outBufs->artist[30] = '\0';
+
+    outBufs->ID = 1;
+    return 1;
 }
 
-Tag_t* getMP3MetaData(const char *path) {
-    Tag_t* data;
+Tag_t getMP3MetaData(const char *path) {
+    Tag_t data;
 
     FsFile file = sd.open(path);
+    if(!file) {
+        Serial.println("couldn't find fie");
+        return data;
+    }
 
-    if(Tagv2(file, data)) return data;
+    if(Tagv2(file, &data) || Tagv1(file, &data)) {file.close(); return data;}
+
+    //no tags found default to file name
+    const char* name = strrchr(path, '/');
+    name = name ? name+1 : path;
+    data.song[TAGARRAYSIZE - 1] = '\0';
+    char* dot = strrchr(data.song, '.');
+    if (dot) *dot = '\0';
+
+    data.artist[0] = '\0';
+    file.close();
+    return data;
+}
+
+void formatTag(const Tag_t& tag, char* out, size_t n) {
+    if (tag.artist[0] != '\0')
+        snprintf(out, n, "%s - %s", tag.song, tag.artist);
+    else
+        snprintf(out, n, "%s", tag.song);
 }

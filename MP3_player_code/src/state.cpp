@@ -12,7 +12,7 @@ void scroll_screen(int dir, OLED_Screen* oled_screen) {
         current = oled_screen->running_selects - 1;
     } else if(current >= ITEMS_PER_PAGE || current >= oled_screen->running_selects) {
         bool last_page = oled_screen->running_selects <= ITEMS_PER_PAGE;  // check before paging
-        current = (last_page && oled_screen->current_select) ? -1 : 0;
+        current = (last_page && oled_screen->back_button) ? -1 : 0;
         oled_screen->scroll_page(1);
     }
     oled_screen->current_select = static_cast<OLED_Select>(current);
@@ -72,9 +72,8 @@ void State_Playlist::handle_push() {
         show_songs();
     } else {
         char path[160];
-        snprintf(path, sizeof(path), "/playlists/%s/%s", playlist, getListName(idx));
-        clearCashe();
-        context_->transition_to(new State_Playing(path, idx));
+        //snprintf(path, sizeof(path), "/playlists/%s/%s", playlist, getListName(idx));
+        context_->transition_to(new State_Playing(playlist, idx));
     }
 }
 
@@ -88,20 +87,22 @@ State_Playing::State_Playing(const char* playlist, int start_index)
     strncpy(playlist_, playlist, LIST_NAME_LEN - 1);
     playlist_[LIST_NAME_LEN - 1] = '\0';
 
-    for (int i = 0; i < count_; i++) {
-        strncpy(queue_[i], getListName(i), LIST_NAME_LEN - 1);
-        queue_[i][LIST_NAME_LEN - 1] = '\0';
-    }
+    Serial.println(playlist_);
+    Serial.println(getListName(idx_));
 }
 
 void State_Playing::setScreen() {
-
+    setSongInfo(idx_, playlist_);
+    toggle_back(1);
+    setOLEDState(PLAYING_SCREEN, count_);
 }
 
 void State_Playing::handle_push() {
     //play song or go back
     OLED_Screen* oled = getOLEDScreen();
     if (oled->current_select == BACK) {
+        clearCashe();
         context_->transition_to(new State_Playlist());
+        return;
     }
 }

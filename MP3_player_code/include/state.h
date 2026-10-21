@@ -6,7 +6,6 @@
 #include "OLED.h"
 
 void scroll_screen(int dir, OLED_Screen* oled_screen);
-void scroll_files(int dir);
 
 class context;
 
@@ -130,7 +129,6 @@ class State_Playlist : public State {
 class State_Playing : public State {
     private:
         char playlist_[LIST_NAME_LEN];
-        char* queue_[MAX_LIST_ITEMS];
         int count_;
         int idx_;
     public:
@@ -140,16 +138,6 @@ class State_Playing : public State {
             scroll_screen(dir, getOLEDScreen());
         }
         void setScreen() override;
-
-        void current_path(char* out, size_t n) {
-            snprintf(out, n, "/playlists/%s/%s", playlist_, queue_[idx_]);
-        }
-
-        int getIdx() {return idx_;}
-
-        const char* getQueueAtIdx(int i) {
-            return (i >= 0 && i < count_) ? queue_[i] : "";
-        }
 };
 
 #endif // STATE_H

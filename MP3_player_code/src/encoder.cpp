@@ -15,7 +15,7 @@ void encoder_init() {
 
 void encoder_sw_isr() {
     //Handle encoder button push
-    Serial.println("Encoder button pushed!");
+    //Serial.println("Encoder button pushed!");
     pushEvent += 1;
 }
 
@@ -23,12 +23,12 @@ void encoder_clk_isr() {
     // Handle the encoder rotation event
     if (gpio_get(ENCODER_CLK_PIN) == gpio_get(ENCODER_DT_PIN)) {
         //positive rotation
-        Serial.println("Encoder rotated clockwise!");
+        //Serial.println("Encoder rotated clockwise!");
         Rotation += 1;
     }
     else {
         //negative rotation
-        Serial.println("Encoder rotated counter-clockwise!");
+        //Serial.println("Encoder rotated counter-clockwise!");
         Rotation -= 1;
     }
 }

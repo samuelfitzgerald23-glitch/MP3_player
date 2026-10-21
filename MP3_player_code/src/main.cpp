@@ -34,17 +34,17 @@ void setup() {
 void loop() {
   int rot = getRotation();
   if(rot != 0) {
-    Serial.print("Encoder rotated: ");
-    Serial.println(rot);
+    // Serial.print("Encoder rotated: ");
+    // Serial.println(rot);
     cxt->request_rot(rot);
   }
 
   if(getPushEvent()) {
-    Serial.println("Encoder button pushed!");
+    //Serial.println("Encoder button pushed!");
     cxt->request_push();
   }
 
-  Serial.println(getOLEDScreen()->oled_state);
+  //Serial.println(getOLEDScreen()->oled_state);
 
   OLED_task();
   delay(20);

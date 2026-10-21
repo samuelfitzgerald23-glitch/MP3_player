@@ -9,19 +9,20 @@
 #define ZERO_X 0
 #define ZERO_Y 1
 
+#define ICON_X_ZERO (ZERO_X + 2)
+#define ICON_Y_ZERO (ZERO_Y + 3)
+
 #define TEXT_X_ZERO (ZERO_X + 14)
-#define TEXT_Y_ZERO (ZERO_Y + 10)
+#define TEXT_Y_ZERO (ZERO_Y + 20)
+#define CURSOUR_Y_ZERO (ICON_Y_ZERO + 10)
 
 #define ART_X_ZERO (ZERO_X + 80)
 #define ART_Y_ZERO (ZERO_Y + 10)
 
-#define ICON_X_ZERO (ZERO_X + 2)
-#define ICON_Y_ZERO (ZERO_Y + 3)
-
 #define BACK_X_ZERO (ZERO_X + 115)
 #define BACK_Y_ZERO (ZERO_Y + 53)
 
-#define ITEMS_PER_PAGE 5
+#define ITEMS_PER_PAGE 4
 
 enum OLED_Select {
     BACK = -1,
@@ -29,7 +30,6 @@ enum OLED_Select {
     SELECT1,
     SELECT2,
     SELECT3,
-    SELECT4
 };
 
 enum OLED_STATE {
@@ -53,6 +53,7 @@ class OLED_Screen {
 
         void set_state(OLED_STATE state, int count = 0) {
             oled_state = state;
+            Serial.println(state);
             switch(state) {
                 case HOME_SCREEN:
                     num_selects = 2;
@@ -105,6 +106,7 @@ OLED_Screen* getOLEDScreen();
 
 void setOLEDState(OLED_STATE state, int count = 0);
 void toggle_back(bool a);
+void setSongInfo(int idx, char* playlist);
 
 void OLED_init();
 void OLED_task();
