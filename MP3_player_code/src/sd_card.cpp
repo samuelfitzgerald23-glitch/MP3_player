@@ -181,6 +181,7 @@ static bool Tagv1(FsFile &file, Tag_t *outBufs) {
 
 Tag_t getMP3MetaData(const char *path) {
     Tag_t data;
+    data.path[0] = path;
 
     FsFile file = sd.open(path);
     if(!file) {

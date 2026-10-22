@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include "state.h"
+#include "OLED.h"
 #include "encoder.h"
 
 #define BAURD_RATE 9600
 
+UI_model model;
+OLED_Screen *display;
 context *cxt;
 
 void setup() {
@@ -22,13 +25,13 @@ void setup() {
   }
 
   // Initialize the OLED display
-  OLED_init();
+  display = new OLED_Screen(model);
 
   // Initialize the encoder
   encoder_init();
 
   //init objects
-  cxt = new context(new State_Home());
+  cxt = new context(model, new State_Home());
 }
 
 void loop() {
@@ -44,8 +47,6 @@ void loop() {
     cxt->request_push();
   }
 
-  //Serial.println(getOLEDScreen()->oled_state);
-
-  OLED_task();
+  display->display();
   delay(20);
 }

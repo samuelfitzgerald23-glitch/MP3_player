@@ -3,9 +3,7 @@
 
 #include <Arduino.h>
 #include "sd_card.h"
-#include "OLED.h"
-
-void scroll_screen(int dir, OLED_Screen* oled_screen);
+#include "UI_model.h"
 
 class context;
 
@@ -28,15 +26,17 @@ class State {
 
 class context {
     private:
+        UI_model& model_;
         State *state_;
     public:
-        context(State *state) : state_(nullptr) {
+        context(UI_model model, State *state) : state_(nullptr), model_(model) {
             this->transition_to(state);
         }
 
         ~context() {
             delete state_;
         }
+        UI_model& model() {return model_;}
 
         void transition_to(State *state) {
             if (this->state_ != nullptr)
@@ -82,30 +82,28 @@ class State_Home : public State {
     public:
         void handle_push() override;
         void handle_rot(int dir) override {
-            scroll_screen(dir, getOLEDScreen());
+            context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            setOLEDState(HOME_SCREEN);
-            toggle_back(0);
+            context_->model().show_list(HOME_SCREEN, "Home", 2, 0, nullptr);
         }
 };
 
 class State_Settings : public State {
     public:
         void handle_push() override {
-            switch(getOLEDScreen()->current_select) {
-                case BACK: 
+            switch(context_->model().current_select) {
+                case -1: 
                     context_->transition_to(new State_Home());
                     return;
                 default: return;
             }
         }
         void handle_rot(int dir) override {
-            scroll_screen(dir, getOLEDScreen());
+            context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            setOLEDState(SETTINGS_SCREEN);
-            toggle_back(1);
+            context_->model().show_list(SETTINGS_SCREEN, "Settings", 7, 1, nullptr);
         }
 };
 
@@ -118,10 +116,9 @@ class State_Playlist : public State {
     public:
         void handle_push() override;
         void handle_rot(int dir) override {
-            scroll_screen(dir, getOLEDScreen());
+            context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            toggle_back(1);
             show_playlists();
         }
 };
@@ -129,15 +126,21 @@ class State_Playlist : public State {
 class State_Playing : public State {
     private:
         char playlist_[LIST_NAME_LEN];
+        Tag_t current_song;
         int count_;
         int idx_;
+        void showSong();
     public:
         State_Playing(const char* playlist, int start_index);
         void handle_push() override;
         void handle_rot(int dir) override {
-            scroll_screen(dir, getOLEDScreen());
+            context_->model().scrollScreen(dir);
+            idx_ = context_->model().page * ITEMS_PER_PAGE + context_->model().current_select;
         }
-        void setScreen() override;
+        void setScreen() override {
+            context_->model().show_list(PLAYING_SCREEN, playlist_, count_, 1, getListName);
+            showSong();
+        };
 };
 
 #endif // STATE_H

@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include "SPI_HAL.h"
-#include "sd_card.h"
+#include "UI_model.h"
 
 #define ZERO_X 0
 #define ZERO_Y 1
@@ -22,93 +22,27 @@
 #define BACK_X_ZERO (ZERO_X + 115)
 #define BACK_Y_ZERO (ZERO_Y + 53)
 
-#define ITEMS_PER_PAGE 4
-
-enum OLED_Select {
-    BACK = -1,
-    SELECT0,
-    SELECT1,
-    SELECT2,
-    SELECT3,
-};
-
-enum OLED_STATE {
-    HOME_SCREEN,
-    SETTINGS_SCREEN,
-    PLAYLIST_SCREEN,
-    PLAYING_SCREEN
-};
-
 class OLED_Screen {
     private:
-        int page = 0;
-        int page_count;
-        int num_selects;
+        UI_model& model_;
 
     public:
-        OLED_STATE oled_state;
-        bool back_button;
-        int running_selects;
-        OLED_Select current_select = SELECT0;
+        void OLED_init();
 
-        void set_state(OLED_STATE state, int count = 0) {
-            oled_state = state;
-            Serial.println(state);
-            switch(state) {
-                case HOME_SCREEN:
-                    num_selects = 2;
-                    break;
-                case SETTINGS_SCREEN:
-                    num_selects = 7;
-                    break;
-                default:
-                    num_selects = count;
-                    break;
-            }
-            reset_screen(num_selects);
-        }
+        UI_model& model() {return model_;}
 
-        void scroll_page(int dir) {
-            page += dir;
-            running_selects -= dir * ITEMS_PER_PAGE;
-            if(page >= page_count) {
-                page = 0;
-                running_selects = num_selects;
-            } else if(page < 0) {
-                page = page_count - 1;
-                running_selects = num_selects - (page * ITEMS_PER_PAGE);
-            }
-        }
-
-        int getPage() const {return page;}
-
-        void reset_screen(int n) {
-            current_select = SELECT0;
-            running_selects = n;
-            page = 0;
-            page_count = (n + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
-        }
+        void displayFileText();
 
         void draw_screen(OLED_STATE state);
 
-        OLED_Screen(OLED_STATE state = HOME_SCREEN, int num = 2, bool back = false) : 
-        oled_state(state), 
-        num_selects(num), 
-        back_button(back) {
-            page_count = (num_selects + ITEMS_PER_PAGE - 1)/ITEMS_PER_PAGE;
+        OLED_Screen(UI_model model) : model_(model) {
+            OLED_init();
         }
 
         ~OLED_Screen() {}
+
+        void display();
     
 };
-
-OLED_Screen* getOLEDScreen();
-
-void setOLEDState(OLED_STATE state, int count = 0);
-void toggle_back(bool a);
-void setSongInfo(int idx, char* playlist);
-
-void OLED_init();
-void OLED_task();
 
 #endif // OLED_H
