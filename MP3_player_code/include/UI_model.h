@@ -15,7 +15,7 @@ enum OLED_STATE {
 struct UI_model {
     OLED_STATE screen = HOME_SCREEN;
     const char* title = "";
-    char* songInfo = {0};
+    char songInfo[132] = {0};
 
     bool back_button = 0;
 
@@ -54,9 +54,9 @@ struct UI_model {
     void scrollScreen(int dir) {
         //scroll the screen in direction i
         int current = current_select + dir;
-        if(current < -1 || (current < 0 && back_button)) {
+        if(current < -1 || (current < 0 && !back_button)) {
             scrollPage(-1);
-            current = running_selects - 1;
+            current = min(running_selects, ITEMS_PER_PAGE) - 1;
         } else if(current >= ITEMS_PER_PAGE || current >= running_selects) {
             bool last_page = running_selects <= ITEMS_PER_PAGE;  // check before paging
             current = (last_page && back_button) ? -1 : 0;

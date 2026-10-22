@@ -88,7 +88,7 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         case PLAYING_SCREEN:
             u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
             displayFileText();
-            if (model().songInfo) {
+            if (model().songInfo[0]) {
                 u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
             }
             break;

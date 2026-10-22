@@ -29,7 +29,7 @@ class context {
         UI_model& model_;
         State *state_;
     public:
-        context(UI_model model, State *state) : state_(nullptr), model_(model) {
+        context(UI_model& model, State *state) : model_(model), state_(nullptr) {
             this->transition_to(state);
         }
 
@@ -85,7 +85,7 @@ class State_Home : public State {
             context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            context_->model().show_list(HOME_SCREEN, "Home", 2, 0, nullptr);
+            context_->model().show_list(HOME_SCREEN, "Home", 2, scrolling, nullptr);
         }
 };
 
@@ -135,7 +135,6 @@ class State_Playing : public State {
         void handle_push() override;
         void handle_rot(int dir) override {
             context_->model().scrollScreen(dir);
-            idx_ = context_->model().page * ITEMS_PER_PAGE + context_->model().current_select;
         }
         void setScreen() override {
             context_->model().show_list(PLAYING_SCREEN, playlist_, count_, 1, getListName);

@@ -88,6 +88,7 @@ void State_Playing::handle_push() {
             context_->transition_to(new State_Playlist());
             return;
         default:
+            idx_ = context_->model().page * ITEMS_PER_PAGE + select;
             showSong();
     }
 }

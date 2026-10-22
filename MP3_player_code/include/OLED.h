@@ -35,7 +35,7 @@ class OLED_Screen {
 
         void draw_screen(OLED_STATE state);
 
-        OLED_Screen(UI_model model) : model_(model) {
+        OLED_Screen(UI_model& model) : model_(model) {
             OLED_init();
         }
 
