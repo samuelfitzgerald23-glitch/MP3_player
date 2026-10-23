@@ -44,6 +44,7 @@ class context {
             this->state_ = state;
             this->state_->set_context(this);
             this->state_->setScreen();
+            Serial.println(model().title);
         }
 
         /*

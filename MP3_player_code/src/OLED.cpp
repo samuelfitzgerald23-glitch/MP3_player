@@ -63,14 +63,16 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
             break;
     }
 
+    if (model().songInfo[0]) {
+        u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
+        u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 17, 3, 5, image_back_button_bits);
+        u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+        u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+    }
+
     switch (state) {
         case HOME_SCREEN:
             //art
-            u8g2.drawXBMP(ART_X_ZERO + 7, ART_Y_ZERO + 34, 3, 5, image_back_button_bits);
-            u8g2.drawXBMP(ART_X_ZERO + 21, ART_Y_ZERO + 34, 3, 5, image_skip_button_bits);
-            u8g2.drawXBMP(ART_X_ZERO + 14, ART_Y_ZERO + 34, 3, 5, image_pause_bits);
-            u8g2.drawXBMP(ART_X_ZERO + 31, ART_Y_ZERO - 6, 8, 6, image_Volup_bits);
-            u8g2.drawXBMP(ART_X_ZERO - 8, ART_Y_ZERO - 6, 6, 6, image_Voldwn_bits);
             u8g2.drawXBMP(ART_X_ZERO, ART_Y_ZERO, 31, 31, image_reccord_icon_bits);
 
             //select options
@@ -88,9 +90,6 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         case PLAYING_SCREEN:
             u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);
             displayFileText();
-            if (model().songInfo[0]) {
-                u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
-            }
             break;
     }
 
