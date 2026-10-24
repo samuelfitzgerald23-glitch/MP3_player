@@ -5,7 +5,9 @@
 
 bool player::playerStart(const char* path, audio_t audio) {
     track.close();
+    vs->softReset();
     track = getSD()->open(path, O_RDONLY);
+    if (!track) { paused = 1; return false; }
     bufLen = bufPos = 0;
     stopPos = skipTags(track, audio);
     paused = 0;
@@ -45,6 +47,7 @@ void player::pauseMusic() {
 
 void player::task() {
     mutex_enter_blocking(&busMutex);
+    vs->setVolume(volume, volume);
 
     if(pendingPause) {pauseMusic(); pendingPause = 0;}
 
@@ -56,6 +59,7 @@ void player::task() {
         case STOP:
             stopPlaying();
             pendingCMD = IDLE;
+            break;
         default:
             fill_buff();
     }

@@ -209,6 +209,7 @@ Tag_t getMP3MetaData(const char *path) {
     //no tags found default to file name
     const char* name = strrchr(path, '/');
     name = name ? name+1 : path;
+    strncpy(data.song, name, TAGARRAYSIZE - 1);
     data.song[TAGARRAYSIZE - 1] = '\0';
     char* dot = strrchr(data.song, '.');
     if (dot) *dot = '\0';
