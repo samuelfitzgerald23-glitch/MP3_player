@@ -13,6 +13,8 @@ player *audio;
 bool player_reader = 0;
 
 void setup() {
+  mutex_init(&busMutex);
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
   Serial.begin(BAURD_RATE);
@@ -62,5 +64,6 @@ void setup1() {
 }
 
 void loop1() {
-  
+  audio->task();
+  delay(1);
 }

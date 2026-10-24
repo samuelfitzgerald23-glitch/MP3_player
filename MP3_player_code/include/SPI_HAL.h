@@ -2,6 +2,7 @@
 #define SPI_HAL_H
 
 #include <SPI.h>
+#include "bus_locking.h"
 
 #define SCL_PIN 2
 #define TX_PIN 3    //MOSI

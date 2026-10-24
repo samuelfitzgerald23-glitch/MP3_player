@@ -39,11 +39,13 @@ void printSdError() {
 }
 
 int loadList(const char* path, ListMode mode) {
+    mutex_enter_blocking(&busMutex);
     listCount = 0;
 
     FsFile dir = sd.open(path, O_RDONLY);
     if (!dir || !dir.isDir()) {
         Serial.printf("Can't open %s\n", path);
+        mutex_exit(&busMutex);
         return 0;
     }
 
@@ -61,6 +63,7 @@ int loadList(const char* path, ListMode mode) {
     dir.close();
 
     qsort(listNames, listCount, LIST_NAME_LEN, cmpNames);
+    mutex_exit(&busMutex);
     return listCount;
 }
 
@@ -118,6 +121,7 @@ static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
     file.read(header, 10);
 
     if (memcmp(header, "ID3", 3) != 0) return 0;    //not tagv2
+    outBufs->ID = MP3V2;
 
     uint8_t version = header[3];
     if(version < 3) return 0;
@@ -152,14 +156,12 @@ static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
             }
         }
         if(artistFilled && songFilled) {
-            outBufs->ID = 2;
             return 1;
         }
 
         pos += 10 + frameSize;
     }
     if(artistFilled || songFilled) {
-            outBufs->ID = 2;
             return 1;
         }
 
@@ -175,6 +177,7 @@ static bool Tagv1(FsFile &file, Tag_t *outBufs) {
     char header[3];
     file.read(header, 3);
     if(memcmp(header, "TAG", 3) != 0) return 0;    //no v1 tag
+    outBufs->ID = MP3V1;
 
     readAtPos(file, header_start + TAGV1TITLESTART, (uint8_t*)outBufs->song, TAGV1SIZE);
     outBufs->song[30] = '\0';
@@ -182,21 +185,26 @@ static bool Tagv1(FsFile &file, Tag_t *outBufs) {
     readAtPos(file, header_start + TAGV1ARTISTSTART, (uint8_t*)outBufs->artist, TAGV1SIZE);
     outBufs->artist[30] = '\0';
 
-    outBufs->ID = 1;
     return 1;
 }
 
 Tag_t getMP3MetaData(const char *path) {
+    mutex_enter_blocking(&busMutex);
     Tag_t data;
     data.path[0] = path;
 
     FsFile file = sd.open(path);
     if(!file) {
         Serial.println("couldn't find fie");
+        mutex_exit(&busMutex);
         return data;
     }
 
-    if(Tagv2(file, &data) || Tagv1(file, &data)) {file.close(); return data;}
+    if(Tagv2(file, &data) || Tagv1(file, &data)) {
+        file.close(); 
+        mutex_exit(&busMutex); 
+        return data;
+    }
 
     //no tags found default to file name
     const char* name = strrchr(path, '/');
@@ -207,6 +215,7 @@ Tag_t getMP3MetaData(const char *path) {
 
     data.artist[0] = '\0';
     file.close();
+    mutex_exit(&busMutex);
     return data;
 }
 
@@ -217,11 +226,11 @@ void formatTag(const Tag_t& tag, char* out, size_t n) {
         snprintf(out, n, "%s", tag.song);
 }
 
-int skipTags(FsFile& file, const Tag_t* tag) {
-    if (tag->ID == 1) return (file.size() - 128);
+int skipTags(FsFile& file, const audio_t audio) {
+    if (audio == MP3V1) return (file.size() - 128);
 
     uint8_t h[10];
-    if (tag->ID == 2 && file.read(h, 10) == 10) {
+    if (audio == MP3V2 && file.read(h, 10) == 10) {
         uint32_t skip = 10 + readSynchsafeInt(&h[6]);
         if (h[5] & 0x10) skip += 10;     // footer present (v2.4 flag)
         file.seek(skip);

@@ -8,10 +8,10 @@
 
 #define BUFFSIZE 512
 
-enum PLAYER_STATE {
-    PLAYING,
-    PAUSED,
-    STOPPED
+enum PLAYER_CMD {
+    IDLE,
+    STOP,
+    PLAY,
 };
 
 class player {
@@ -25,9 +25,9 @@ class player {
         int stopPos;
 
         int volume = 20;
-        bool playingMusic = 0;
+        bool paused = 0;
 
-        bool playerStart(const char* path, Tag_t* tag);
+        bool playerStart(const char* path, audio_t audio);
 
         void fill_buff();
 
@@ -35,8 +35,12 @@ class player {
         
         void stopPlaying();
 
+        PLAYER_CMD pendingCMD = IDLE;
+        bool pendingPause = 0;
+        char pendingPath[160];
+        audio_t pendingAudio = NONE;
+
     public:
-        PLAYER_STATE state = STOPPED;
         
         player() {
             //init VS1053 chip
@@ -49,6 +53,20 @@ class player {
             vs->setVolume(volume, volume);
         }
 
+        //called on core 0
+        void start_req(const char* path, audio_t audio);
+        void pause_req() {
+            mutex_enter_blocking(&busMutex);
+            pendingPause = 1;
+            mutex_exit(&busMutex);
+        }
+        void stop_req() {
+            mutex_enter_blocking(&busMutex);
+            pendingCMD = STOP;
+            mutex_exit(&busMutex);
+        }
+
+        //called on core 1
         void task();
         
 };

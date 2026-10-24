@@ -68,7 +68,7 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 17, 3, 5, image_back_button_bits);
         u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
         if (model().paused) {
-            u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
         } else {
             u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
         }
@@ -113,8 +113,10 @@ void OLED_Screen::OLED_init() {
 
 void OLED_Screen::display() {
     u8g2.clearBuffer();
+    mutex_enter_blocking(&busMutex);
     u8g2.firstPage();
     do {
         draw_screen(model().screen);
     } while (u8g2.nextPage());
+    mutex_exit(&busMutex);
 }
