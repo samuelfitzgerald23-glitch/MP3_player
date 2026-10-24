@@ -2,8 +2,12 @@
 #include <strings.h>
 #include <cstring>
 
+SdFs sd;
+
 static char listNames[MAX_LIST_ITEMS][LIST_NAME_LEN];
 static int  listCount = 0;
+
+SdFs* getSD() {return &sd;}
 
 static int cmpNames(const void* a, const void* b) {
     return strcasecmp((const char*)a, (const char*)b);
@@ -14,7 +18,10 @@ static bool isMp3(const char* name) {
     return n > 4 && strcasecmp(name + n - 4, ".mp3") == 0;
 }
 
-SdFs sd;
+static bool isOgg(const char* name) {
+    size_t n = strlen(name);
+    return n > 4 && strcasecmp(name + n - 4, ".ogg") == 0;
+}
 
 bool SD_init() {
     if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(1))) {
@@ -208,4 +215,18 @@ void formatTag(const Tag_t& tag, char* out, size_t n) {
         snprintf(out, n, "%s - %s", tag.song, tag.artist);
     else
         snprintf(out, n, "%s", tag.song);
+}
+
+int skipTags(FsFile& file, const Tag_t* tag) {
+    if (tag->ID == 1) return (file.size() - 128);
+
+    uint8_t h[10];
+    if (tag->ID == 2 && file.read(h, 10) == 10) {
+        uint32_t skip = 10 + readSynchsafeInt(&h[6]);
+        if (h[5] & 0x10) skip += 10;     // footer present (v2.4 flag)
+        file.seek(skip);
+    } else {
+        file.seek(0);
+    }
+    return file.size();
 }

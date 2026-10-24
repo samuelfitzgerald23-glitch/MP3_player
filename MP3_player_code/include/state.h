@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "sd_card.h"
 #include "UI_model.h"
+#include "player.h"
 
 class context;
 
@@ -29,7 +30,8 @@ class context {
         UI_model& model_;
         State *state_;
     public:
-        context(UI_model& model, State *state) : model_(model), state_(nullptr) {
+        context(UI_model& model, State *state) 
+        : model_(model), state_(nullptr) {
             this->transition_to(state);
         }
 
@@ -69,7 +71,9 @@ class context {
         */
         void request_skip() {}
 
-        void request_pause_play() {}
+        void request_pause_play() {
+            model_.paused = !model_.paused;
+        }
 
         void request_back() {}
 };

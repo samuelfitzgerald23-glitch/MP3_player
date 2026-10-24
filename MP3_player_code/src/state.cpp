@@ -76,6 +76,7 @@ void State_Playing::showSong() {
     char path[160];
     snprintf(path, sizeof(path), "/playlists/%s/%s", playlist_, getListName(idx_));
     current_song = getMP3MetaData(path);
+    //format metadata to display on OLED
     formatTag(current_song, context_->model().songInfo, sizeof(context_->model().songInfo));
 }
 

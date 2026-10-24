@@ -67,7 +67,11 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
         u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 17, 3, 5, image_back_button_bits);
         u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
-        u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+        if (model().paused) {
+            u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+        } else {
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+        }
     }
 
     switch (state) {

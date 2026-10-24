@@ -25,12 +25,15 @@ struct Tag_t {
     const char* path[TAGARRAYSIZE] = {0};
 };
 
+SdFs* getSD();
+
 int         loadList(const char* path, ListMode mode);
 int         getListCount();
 const char* getListName(int i);
 
 Tag_t getMP3MetaData(const char *path);
 void formatTag(const Tag_t& tag, char* out, size_t n);
+int skipTags(FsFile& file, const Tag_t* tag);
 
 bool SD_init();
 void printSdError();

@@ -9,6 +9,9 @@ UI_model model;
 OLED_Screen *display;
 context *cxt;
 
+player *audio;
+bool player_reader = 0;
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
@@ -32,6 +35,9 @@ void setup() {
 
   //init objects
   cxt = new context(model, new State_Home());
+
+  audio = new player();
+  player_reader = 1;
 }
 
 void loop() {
@@ -49,4 +55,12 @@ void loop() {
 
   display->display();
   delay(20);
+}
+
+void setup1() {
+  while (!player_reader);
+}
+
+void loop1() {
+  
 }
