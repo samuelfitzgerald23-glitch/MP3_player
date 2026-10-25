@@ -27,12 +27,11 @@ class player {
         int volume = 20;
         bool paused = 0;
         volatile bool finished = 0;
+        volatile bool active = 0;
 
         bool playerStart(const char* path, audio_t audio);
 
         void fill_buff();
-
-        void pauseMusic();
         
         void stopPlaying();
 
@@ -41,8 +40,8 @@ class player {
         char pendingPath[160];
         audio_t pendingAudio = NONE;
 
-    public:
-        
+    public: 
+
         player() {
             //init VS1053 chip
             vs = new Adafruit_VS1053(AUDIO_RESET_PIN, AUDIO_CS_PIN, AUDIO_DATA_PIN, AUDIO_DREQ_PIN);
@@ -54,13 +53,18 @@ class player {
             vs->setVolume(volume, volume);
         }
 
-        bool getFinished() {return finished;}
+        bool getFinished() {
+            bool f = finished;
+            finished = 0;
+            return f;
+        }
+        bool isActive() {return active;}
 
         //called on core 0
         void start_req(const Tag_t& tag);
-        void pause_req() {
+        void pause_req(bool p) {
             mutex_enter_blocking(&busMutex);
-            pendingPause = 1;
+            pendingPause = p;
             mutex_exit(&busMutex);
         }
         void stop_req() {

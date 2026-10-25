@@ -11,6 +11,7 @@ bool player::playerStart(const char* path, audio_t audio) {
     bufLen = bufPos = 0;
     stopPos = skipTags(track, audio);
     paused = 0;
+    vs->setVolume(volume, volume);
     return (bool)track;
 }
 
@@ -18,9 +19,7 @@ void player::stopPlaying() {
     //if no track is open we are already not playing anything
     if (track) {
         track.close();
-        vs->softReset();
     }
-    paused = 1;
 }
 
 void player::fill_buff() {
@@ -45,24 +44,20 @@ void player::fill_buff() {
     }
 }
 
-void player::pauseMusic() {
-    paused = !paused;
-}
-
 void player::task() {
     mutex_enter_blocking(&busMutex);
-    vs->setVolume(volume, volume);
 
-    if(pendingPause) {pauseMusic(); pendingPause = 0;}
+    paused = pendingPause;
 
     switch(pendingCMD) {
         case PLAY:
-            playerStart(pendingPath, pendingAudio);
+            if(playerStart(pendingPath, pendingAudio)) active = 1;
             pendingCMD = IDLE;
             break;
         case STOP:
             stopPlaying();
             pendingCMD = IDLE;
+            active = 0;
             break;
         default:
             fill_buff();
@@ -80,6 +75,7 @@ void player::start_req(const Tag_t& tag) {
     strncpy(pendingPath, tag.path, sizeof(pendingPath) - 1);
     pendingPath[sizeof(pendingPath) - 1] = '\0';
     pendingAudio = tag.ID;
+    pendingPause = 0;
     pendingCMD = PLAY;
     mutex_exit(&busMutex);
 }

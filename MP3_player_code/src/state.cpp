@@ -78,6 +78,9 @@ void State_Playing::showSong() {
     current_song = getMP3MetaData(path);
     //format metadata to display on OLED
     formatTag(current_song, context_->model().songInfo, sizeof(context_->model().songInfo));
+    //start playing the next song
+    context_->audio()->start_req(current_song);
+    context_->model().paused = 0;
 }
 
 void State_Playing::handle_push() {

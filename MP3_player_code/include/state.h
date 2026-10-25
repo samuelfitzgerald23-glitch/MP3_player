@@ -29,9 +29,10 @@ class context {
     private:
         UI_model& model_;
         State *state_;
+        player *audio_;
     public:
-        context(UI_model& model, State *state) 
-        : model_(model), state_(nullptr) {
+        context(UI_model& model, State *state, player *audio) 
+        : model_(model), state_(nullptr), audio_(audio) {
             this->transition_to(state);
         }
 
@@ -39,6 +40,7 @@ class context {
             delete state_;
         }
         UI_model& model() {return model_;}
+        player* audio() {return audio_;}
 
         void transition_to(State *state) {
             if (this->state_ != nullptr)
@@ -69,28 +71,37 @@ class context {
         functions to pause/play, skip, and go back a song
         should always be able to call these independent of the state
         */
-        void request_skip() {}
+        void request_skip() {
+            if(audio_->isActive()) {
 
-        void request_pause_play() {
-            model_.paused = !model_.paused;
+            }
         }
 
-        void request_back() {}
+        void request_pause_play() {
+            if(audio_->isActive()) {
+                model_.paused = !model_.paused;
+                audio_->pause_req(model_.paused);
+            }
+        }
+
+        void request_back() {
+            if(audio_->isActive()) {
+                
+            }
+        }
 };
 
 class State_Settings;
 class State_Playlist;
 
 class State_Home : public State {
-    private:
-        bool scrolling = false;
     public:
         void handle_push() override;
         void handle_rot(int dir) override {
             context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            context_->model().show_list(HOME_SCREEN, "Home", 2, scrolling, nullptr);
+            context_->model().show_list(HOME_SCREEN, "Home", 2, 0, nullptr);
         }
 };
 

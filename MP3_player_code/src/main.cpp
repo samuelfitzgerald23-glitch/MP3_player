@@ -10,7 +10,7 @@ OLED_Screen *display;
 context *cxt;
 
 player *audio;
-bool player_reader = 0;
+volatile bool player_ready = 0;
 
 void setup() {
   mutex_init(&busMutex);
@@ -35,14 +35,17 @@ void setup() {
   // Initialize the encoder
   encoder_init();
 
-  //init objects
-  cxt = new context(model, new State_Home());
-
+  //init player
   audio = new player();
-  player_reader = 1;
+
+  //init objects
+  cxt = new context(model, new State_Home(), audio);
+  player_ready = 1;
 }
 
 void loop() {
+  if (audio->getFinished()) cxt->request_skip();
+
   int rot = getRotation();
   if(rot != 0) {
     // Serial.print("Encoder rotated: ");
@@ -60,7 +63,7 @@ void loop() {
 }
 
 void setup1() {
-  while (!player_reader);
+  while (!player_ready);
 }
 
 void loop1() {
