@@ -24,7 +24,7 @@ static bool isOgg(const char* name) {
 }
 
 bool SD_init() {
-    if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(1))) {
+    if (!sd.begin(SdSpiConfig(SD_CS_PIN, SHARED_SPI, SD_SCK_MHZ(4)))) {
         Serial.println("Failed to initialize SD card.");
         printSdError();
         return false;
@@ -190,8 +190,11 @@ static bool Tagv1(FsFile &file, Tag_t *outBufs) {
 
 Tag_t getMP3MetaData(const char *path) {
     mutex_enter_blocking(&busMutex);
+
     Tag_t data;
-    data.path[0] = path;
+    int n = sizeof(data.path);
+    strncpy(data.path, path, n-1);
+    data.path[n-1] = '\0';
 
     FsFile file = sd.open(path);
     if(!file) {

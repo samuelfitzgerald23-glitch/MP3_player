@@ -28,7 +28,7 @@ struct Tag_t {
     audio_t ID = NONE;         //0 = none, 1 = v1, 2 = v2
     char song[TAGARRAYSIZE] = {0};
     char artist[TAGARRAYSIZE] = {0};
-    const char* path[TAGARRAYSIZE] = {0};
+    char path[160] = {0};
 };
 
 SdFs* getSD();

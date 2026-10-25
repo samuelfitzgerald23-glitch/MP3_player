@@ -26,6 +26,7 @@ class player {
 
         int volume = 20;
         bool paused = 0;
+        volatile bool finished = 0;
 
         bool playerStart(const char* path, audio_t audio);
 
@@ -53,8 +54,10 @@ class player {
             vs->setVolume(volume, volume);
         }
 
+        bool getFinished() {return finished;}
+
         //called on core 0
-        void start_req(const char* path, audio_t audio);
+        void start_req(const Tag_t& tag);
         void pause_req() {
             mutex_enter_blocking(&busMutex);
             pendingPause = 1;

@@ -32,7 +32,11 @@ void player::fill_buff() {
                 uint64_t pos = track.curPosition();
                 if (pos > (uint64_t)stopPos) n -= (pos - stopPos);
             }
-            if (n <= 0) { stopPlaying(); return; }
+            if (n <= 0) {
+                stopPlaying();
+                finished = 1;
+                return; 
+            }
             bufLen = n; bufPos = 0;
         }
         int n = min(VS1053_DATABUFFERLEN, bufLen - bufPos); // the chip takes 32-byte chunks
@@ -71,10 +75,11 @@ void player::task() {
  * public methods on core 0, posting requests
 */
 
-void player::start_req(const char* path, audio_t audio) {
+void player::start_req(const Tag_t& tag) {
     mutex_enter_blocking(&busMutex);
-    strncpy(pendingPath, path, sizeof(pendingPath) - 1);
+    strncpy(pendingPath, tag.path, sizeof(pendingPath) - 1);
     pendingPath[sizeof(pendingPath) - 1] = '\0';
+    pendingAudio = tag.ID;
     pendingCMD = PLAY;
     mutex_exit(&busMutex);
 }
