@@ -54,7 +54,8 @@ void State_Playlist::handle_push() {
     } else {
         //char path[160];
         //snprintf(path, sizeof(path), "/playlists/%s/%s", playlist, getListName(idx));
-        context_->transition_to(new State_Playing(playlist, idx));
+        context_->queue()->load(playlist, idx);
+        context_->transition_to(new State_Playing(playlist));
     }
 }
 
@@ -62,25 +63,13 @@ void State_Playlist::handle_push() {
  * playing state methods
  */
 
-State_Playing::State_Playing(const char* playlist, int start_index) 
-    : count_(getListCount()), idx_(start_index) {
+State_Playing::State_Playing(const char* playlist) 
+    : count_(getListCount()) {
 
     strncpy(playlist_, playlist, LIST_NAME_LEN - 1);
     playlist_[LIST_NAME_LEN - 1] = '\0';
 
     Serial.println(playlist_);
-    Serial.println(getListName(idx_));
-}
-
-void State_Playing::showSong() {
-    char path[160];
-    snprintf(path, sizeof(path), "/playlists/%s/%s", playlist_, getListName(idx_));
-    current_song = getMP3MetaData(path);
-    //format metadata to display on OLED
-    formatTag(current_song, context_->model().songInfo, sizeof(context_->model().songInfo));
-    //start playing the next song
-    context_->audio()->start_req(current_song);
-    context_->model().paused = 0;
 }
 
 void State_Playing::handle_push() {
@@ -92,7 +81,8 @@ void State_Playing::handle_push() {
             context_->transition_to(new State_Playlist());
             return;
         default:
-            idx_ = context_->model().page * ITEMS_PER_PAGE + select;
-            showSong();
+            int idx = context_->model().page * ITEMS_PER_PAGE + select;
+            context_->queue()->set(idx);
+            context_->playCurrent();
     }
 }
