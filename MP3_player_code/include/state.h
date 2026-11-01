@@ -93,7 +93,7 @@ class context {
         void playCurrent() {
             char path[160];
             queue_.path(path, sizeof(path));
-            Tag_t tag = getMP3MetaData(path);
+            Tag_t tag = getMetaData(path);
             //format metadata to display on OLED
             formatTag(tag, model_.songInfo, sizeof(model_.songInfo));
             //start playing the next song

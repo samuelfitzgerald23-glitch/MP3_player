@@ -30,7 +30,7 @@ void State_Playlist::show_songs() {
     level = 1;
     char path[96];
     snprintf(path, sizeof(path), "/playlists/%s", playlist);
-    int n = loadList(path, LIST_MP3);
+    int n = loadList(path, LIST_AUDIO);
     context_->model().show_list(PLAYLIST_SCREEN, "Playlists", n, 1, getListName);
 }
 

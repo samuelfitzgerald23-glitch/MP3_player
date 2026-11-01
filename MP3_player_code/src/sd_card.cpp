@@ -77,6 +77,10 @@ void clearCashe() {
     std::memset(listNames, 0, sizeof(listNames));
 }
 
+/*************************************************************************************************************************
+ * metadata decoding
+ */
+
 static uint32_t readSynchsafeInt(uint8_t *bytes) {
   return ((bytes[0] & 0x7F) << 21) | ((bytes[1] & 0x7F) << 14) |
          ((bytes[2] & 0x7F) << 7)  | (bytes[3] & 0x7F);
@@ -115,6 +119,7 @@ static void decodeText(const uint8_t* raw, size_t len, uint8_t enc, char* out, s
     out[o] = '\0';
 }
 
+//read MP3 file metadata
 static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
     file.seek(0);   //go to start of file
     uint8_t header[10];
@@ -168,6 +173,7 @@ static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
     return 0;
 }
 
+//read legacy MP3 file metadata
 static bool Tagv1(FsFile &file, Tag_t *outBufs) {
     uint64_t size = file.size();
     if(size < 128) return 0;
@@ -188,7 +194,46 @@ static bool Tagv1(FsFile &file, Tag_t *outBufs) {
     return 1;
 }
 
-Tag_t getMP3MetaData(const char *path) {
+//read ogg Vorbis metadata
+static bool readVorbis(FsFile file, Tag_t* out) {
+    static uint8_t buf[2048];            // static: too big for the stack; the bus mutex serialises callers
+    if (!file.seek(0)) return false;
+    int n = file.read(buf, sizeof(buf));
+    if (n < 27 || memcmp(buf, "OggS", 4) != 0) return false;
+    out->ID = OGG;
+
+    int p = -1;                           // find the comment header packet
+    for (int i = 0; i + 7 <= n; i++)
+        if (buf[i] == 0x03 && memcmp(buf + i + 1, "vorbis", 6) == 0) { p = i + 7; break; }
+    if (p < 0 || p + 4 > n) return false;
+
+    auto u32 = [&](int at) -> uint32_t {
+        return buf[at] | (buf[at+1] << 8) | (buf[at+2] << 16) | ((uint32_t)buf[at+3] << 24);
+    };
+
+    uint32_t vl = u32(p); p += 4;
+    if (vl > (uint32_t)(n - p)) return false;
+    p += vl;                              // skip the vendor string
+    if (p + 4 > n) return false;
+    uint32_t count = u32(p); p += 4;
+
+    bool gotT = false, gotA = false;
+    for (uint32_t c = 0; c < count && p + 4 <= n; c++) {
+        uint32_t len = u32(p); p += 4;
+        if (len > (uint32_t)(n - p)) break;          // runs past our window
+        const char* s = (const char*)buf + p;
+        if (len > 6 && strncasecmp(s, "TITLE=", 6) == 0) {
+            decodeText((const uint8_t*)s + 6, len - 6, 3, out->song, TAGARRAYSIZE); gotT = true;
+        } else if (len > 7 && strncasecmp(s, "ARTIST=", 7) == 0) {
+            decodeText((const uint8_t*)s + 7, len - 7, 3, out->artist, TAGARRAYSIZE); gotA = true;
+        }
+        p += len;
+    }
+    if (gotT || gotA) return true;
+    return false;
+}
+
+Tag_t getMetaData(const char *path) {
     mutex_enter_blocking(&busMutex);
 
     Tag_t data;
@@ -203,7 +248,10 @@ Tag_t getMP3MetaData(const char *path) {
         return data;
     }
 
-    if(Tagv2(file, &data) || Tagv1(file, &data)) {
+    bool tagged = isOgg(path) ? readVorbis(file, &data)
+                                : (Tagv2(file, &data) || Tagv1(file, &data));
+
+    if(tagged) {
         file.close(); 
         mutex_exit(&busMutex); 
         return data;
@@ -223,6 +271,10 @@ Tag_t getMP3MetaData(const char *path) {
     return data;
 }
 
+/*************************************************************************************************************************
+ * tag stuff
+ */
+
 void formatTag(const Tag_t& tag, char* out, size_t n) {
     if (tag.artist[0] != '\0')
         snprintf(out, n, "%s - %s", tag.song, tag.artist);
@@ -231,15 +283,22 @@ void formatTag(const Tag_t& tag, char* out, size_t n) {
 }
 
 int skipTags(FsFile& file, const audio_t audio) {
-    if (audio == MP3V1) return (file.size() - 128);
-
     uint8_t h[10];
-    if (audio == MP3V2 && file.read(h, 10) == 10) {
-        uint32_t skip = 10 + readSynchsafeInt(&h[6]);
-        if (h[5] & 0x10) skip += 10;     // footer present (v2.4 flag)
-        file.seek(skip);
-    } else {
-        file.seek(0);
+    uint32_t start = 0;
+    uint32_t end = file.size();
+
+    switch(audio) {
+        case MP3V1:
+            return (end - 128);
+        case MP3V2: {
+            file.read(h, 10);
+            start = 10 + readSynchsafeInt(&h[6]);
+            if (h[5] & 0x10) start += 10;     // footer present (v2.4 flag)
+            break;
+        }
+        default:
+            break;
     }
-    return file.size();
+    file.seek(start);
+    return end;
 }

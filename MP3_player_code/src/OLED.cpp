@@ -28,6 +28,12 @@ static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 
+void OLED_Screen::togglePowerMode() {
+    //toggles power saving mode (screen on/off) to save power
+    model().powerSaveOn = !model().powerSaveOn;
+    u8g2.setPowerSave(model().powerSaveOn);
+}
+
 void OLED_Screen::displayFileText() {
     int count = model().n_selects;
     if (count == 0) {

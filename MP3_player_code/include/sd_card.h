@@ -16,12 +16,13 @@
 
 #define TAGARRAYSIZE 64
 
-enum ListMode { LIST_FOLDERS, LIST_MP3 };
+enum ListMode { LIST_FOLDERS, LIST_AUDIO };
 
 enum audio_t {
     NONE,
     MP3V1,
-    MP3V2
+    MP3V2,
+    OGG
 };
 
 struct Tag_t {
@@ -37,7 +38,7 @@ int         loadList(const char* path, ListMode mode);
 int         getListCount();
 const char* getListName(int i);
 
-Tag_t getMP3MetaData(const char *path);
+Tag_t getMetaData(const char *path);
 void formatTag(const Tag_t& tag, char* out, size_t n);
 int skipTags(FsFile& file, const audio_t audio);
 
