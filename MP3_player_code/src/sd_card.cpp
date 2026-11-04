@@ -120,7 +120,7 @@ static void decodeText(const uint8_t* raw, size_t len, uint8_t enc, char* out, s
 }
 
 //read MP3 file metadata
-static bool Tagv2(FsFile &file, Tag_t *outBufs, size_t bufSize = TAGARRAYSIZE) {
+static bool Tagv2(FsFile &file, Tag_t *outBufs) {
     file.seek(0);   //go to start of file
     uint8_t header[10];
     file.read(header, 10);

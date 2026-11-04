@@ -3,9 +3,20 @@
  * methods on core 1, actually doing things
 */
 
+volatile uint8_t dbgHead[8];
+
+static bool waitDreq(uint32_t ms) {
+    uint32_t t = millis();
+    while (!digitalRead(AUDIO_DREQ_PIN)) if (millis() - t > ms) return false;
+    return true;
+}
+
 bool player::playerStart(const char* path, audio_t audio) {
     track.close();
     vs->softReset();
+    waitDreq(500);
+    vs->sciWrite(0x03, 0x6000);       // SCI_CLOCKF = 3.0x multiplier
+    waitDreq(100);
     track = getSD()->open(path, O_RDONLY);
     if (!track) { paused = 1; return false; }
     bufLen = bufPos = 0;
@@ -27,6 +38,7 @@ void player::fill_buff() {
     while(vs->readyForData()) {
         if (bufPos >= bufLen) {
             int n = track.read(buf, sizeof(buf));
+            for (int i = 0; i < 8; i++) dbgHead[i] = buf[i];
             if (n > 0) {
                 uint64_t pos = track.curPosition();
                 if (pos > (uint64_t)stopPos) n -= (pos - stopPos);

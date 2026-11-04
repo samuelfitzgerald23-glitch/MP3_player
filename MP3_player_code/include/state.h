@@ -2,6 +2,8 @@
 #define STATE_H
 
 #include <Arduino.h>
+#include <algorithm>
+
 #include "sd_card.h"
 #include "UI_model.h"
 #include "player.h"
@@ -41,6 +43,14 @@ class PlayQueue {
         void path(char* out, size_t n) const {
             snprintf(out, n, "/playlists/%s/%s", playlist_, names_[idx_]);
         }
+        // void addToQueue(const char* songToAdd) {
+        //     if(count_++ > MAX_LIST_ITEMS) return;                   //queue at max size, cannot add more
+        //     count_++;
+        //     int start = (idx_++ > MAX_LIST_ITEMS) ? 0 : idx_++;     //if idx at end of queue add to the start of the queue
+        //     for (size_t i = count_-1; i < start; i--) {
+        //         names_[i] = names_[i-1];
+        //     }
+        // }
 };
 
 class context;
@@ -94,6 +104,7 @@ class context {
             char path[160];
             queue_.path(path, sizeof(path));
             Tag_t tag = getMetaData(path);
+            Serial.printf("playing: '%s'\n", tag.path);
             //format metadata to display on OLED
             formatTag(tag, model_.songInfo, sizeof(model_.songInfo));
             //start playing the next song
