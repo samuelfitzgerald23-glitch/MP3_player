@@ -132,12 +132,23 @@ class context {
         functions to pause/play, skip, and go back a song
         should always be able to call these independent of the state
         */
+
+        //button 1
+        //single press
         void request_skip() {
             if(!audio_->isActive()) return;
             if(queue_.next()) playCurrent();
             else request_stop();
         }
+        //double press
+        void request_back() {
+            if(!audio_->isActive()) return;
+            queue_.prev();
+            playCurrent();
+        }
 
+        //button 2
+        //single press
         void request_pause_play() {
             if(!audio_->isActive()) {
             model_.paused = !model_.paused;
@@ -145,12 +156,7 @@ class context {
             }
         }
 
-        void request_back() {
-            if(!audio_->isActive()) return;
-            queue_.prev();
-            playCurrent();
-        }
-
+        //double press
         void request_stop() {
             if(audio_->isActive()) audio_->stop_req();
         }
