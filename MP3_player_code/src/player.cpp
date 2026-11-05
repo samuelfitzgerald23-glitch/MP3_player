@@ -11,12 +11,16 @@ static bool waitDreq(uint32_t ms) {
     return true;
 }
 
-bool player::playerStart(const char* path, audio_t audio) {
-    track.close();
+static void resetPlayer(Adafruit_VS1053* vs) {
     vs->softReset();
     waitDreq(500);
     vs->sciWrite(0x03, 0x6000);       // SCI_CLOCKF = 3.0x multiplier
     waitDreq(100);
+}
+
+bool player::playerStart(const char* path, audio_t audio) {
+    track.close();
+    resetPlayer(vs);
     track = getSD()->open(path, O_RDONLY);
     if (!track) { paused = 1; return false; }
     bufLen = bufPos = 0;
