@@ -28,6 +28,12 @@ static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 
+void OLED_Screen::togglePowerMode() {
+    //toggles power saving mode (screen on/off) to save power
+    model().powerSaveOn = !model().powerSaveOn;
+    u8g2.setPowerSave(model().powerSaveOn);
+}
+
 void OLED_Screen::displayFileText() {
     int count = model().n_selects;
     if (count == 0) {
@@ -67,7 +73,11 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
         u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 17, 3, 5, image_back_button_bits);
         u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
-        u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+        if (model().paused) {
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+        } else {
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+        }
     }
 
     switch (state) {
@@ -109,8 +119,10 @@ void OLED_Screen::OLED_init() {
 
 void OLED_Screen::display() {
     u8g2.clearBuffer();
+    mutex_enter_blocking(&busMutex);
     u8g2.firstPage();
     do {
         draw_screen(model().screen);
     } while (u8g2.nextPage());
+    mutex_exit(&busMutex);
 }

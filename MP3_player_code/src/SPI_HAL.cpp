@@ -14,6 +14,10 @@ void SPI_init() {
     pinMode(SD_CS_PIN, OUTPUT);
     digitalWrite(SD_CS_PIN, 1);
 
+    //audio decoder
+    pinMode(AUDIO_CS_PIN, OUTPUT);
+    digitalWrite(AUDIO_CS_PIN, 1);
+
     SPI.setSCK(SCL_PIN);
     SPI.setTX(TX_PIN);
     SPI.setRX(RX_PIN);

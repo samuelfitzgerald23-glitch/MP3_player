@@ -9,7 +9,12 @@ UI_model model;
 OLED_Screen *display;
 context *cxt;
 
+player *audio;
+volatile bool player_ready = 0;
+
 void setup() {
+  mutex_init(&busMutex);
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
   Serial.begin(BAURD_RATE);
@@ -30,11 +35,17 @@ void setup() {
   // Initialize the encoder
   encoder_init();
 
+  //init player
+  audio = new player();
+
   //init objects
-  cxt = new context(model, new State_Home());
+  cxt = new context(model, new State_Home(), audio);
+  player_ready = 1;
 }
 
 void loop() {
+  if (audio->getFinished()) cxt->request_skip();
+
   int rot = getRotation();
   if(rot != 0) {
     // Serial.print("Encoder rotated: ");
@@ -49,4 +60,13 @@ void loop() {
 
   display->display();
   delay(20);
+}
+
+void setup1() {
+  while (!player_ready);
+}
+
+void loop1() {
+  audio->task();
+  delay(1);
 }

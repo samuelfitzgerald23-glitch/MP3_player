@@ -13,11 +13,13 @@ enum OLED_STATE {
 };
 
 struct UI_model {
+    bool powerSaveOn = 0;
     OLED_STATE screen = HOME_SCREEN;
     const char* title = "";
     char songInfo[132] = {0};
 
     bool back_button = 0;
+    bool paused = 0;
 
     const char* (*item_name)(int) = nullptr;   // set by the state; renderer calls it
 

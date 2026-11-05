@@ -16,21 +16,31 @@
 
 #define TAGARRAYSIZE 64
 
-enum ListMode { LIST_FOLDERS, LIST_MP3 };
+enum ListMode { LIST_FOLDERS, LIST_AUDIO };
+
+enum audio_t {
+    NONE,
+    MP3V1,
+    MP3V2,
+    OGG
+};
 
 struct Tag_t {
-    int ID = 0;         //0 = none, 1 = v1, 2 = v2
+    audio_t ID = NONE;         //0 = none, 1 = v1, 2 = v2
     char song[TAGARRAYSIZE] = {0};
     char artist[TAGARRAYSIZE] = {0};
-    const char* path[TAGARRAYSIZE] = {0};
+    char path[160] = {0};
 };
+
+SdFs* getSD();
 
 int         loadList(const char* path, ListMode mode);
 int         getListCount();
 const char* getListName(int i);
 
-Tag_t getMP3MetaData(const char *path);
+Tag_t getMetaData(const char *path);
 void formatTag(const Tag_t& tag, char* out, size_t n);
+int skipTags(FsFile& file, const audio_t audio);
 
 bool SD_init();
 void printSdError();

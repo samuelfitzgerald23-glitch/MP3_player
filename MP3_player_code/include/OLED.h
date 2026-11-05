@@ -31,6 +31,8 @@ class OLED_Screen {
 
         UI_model& model() {return model_;}
 
+        void togglePowerMode();
+
         void displayFileText();
 
         void draw_screen(OLED_STATE state);
