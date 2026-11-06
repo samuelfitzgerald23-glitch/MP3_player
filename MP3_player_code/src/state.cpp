@@ -44,7 +44,7 @@ void State_Playlist::handle_push() {
     }
 
     // absolute index into the list, not just the position on this page
-    int idx = context_->model().page * ITEMS_PER_PAGE + context_->model().current_select;
+    int idx = context_->model().getIdx();
     if (idx >= getListCount()) return;
 
     if (level == 0) {
@@ -81,8 +81,41 @@ void State_Playing::handle_push() {
             context_->transition_to(new State_Playlist());
             return;
         default:
-            int idx = context_->model().page * ITEMS_PER_PAGE + select;
+            int idx = context_->model().getIdx();
             context_->queue()->set(idx);
             context_->playCurrent();
+    }
+}
+
+/******************************************************************************************************************************
+ * settings state methods
+ */
+
+void State_Settings::handle_push() {
+    if(context_->model().current_select == -1) {
+        context_->transition_to(new State_Home());
+        return;
+    }
+
+    int idx = context_->model().getIdx();
+    switch(idx) {
+        case 0: 
+            //power save (new state i think)
+            context_->transition_to(new State_PowerSave);
+            return;
+        case 1:
+            //volume change state
+            context_->transition_to(new State_volume);
+            return;
+        case 2:
+            //equaliser state
+            return;
+        case 3:
+            //change repeat playlist
+            context_->model().repeat = !context_->model().repeat;
+            context_->queue()->setRepeat(context_->model().repeat);
+            return;
+        default: 
+            return;
     }
 }

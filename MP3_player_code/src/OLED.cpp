@@ -28,10 +28,16 @@ static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 
-void OLED_Screen::togglePowerMode() {
-    //toggles power saving mode (screen on/off) to save power
-    model().powerSaveOn = !model().powerSaveOn;
-    u8g2.setPowerSave(model().powerSaveOn);
+void UI_model::setPowerMode(bool b) {
+    u8g2.setPowerSave(b);
+}
+
+void OLED_Screen::showList(int count) {
+    for (int i = 0; i < ITEMS_PER_PAGE; i++) {
+        int idx = model().page * ITEMS_PER_PAGE + i;
+        if (idx >= count) break;
+        u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + i * 10, model().item_name(idx));
+    }
 }
 
 void OLED_Screen::displayFileText() {
@@ -41,11 +47,7 @@ void OLED_Screen::displayFileText() {
         return;
     }
 
-    for (int i = 0; i < ITEMS_PER_PAGE; i++) {
-        int idx = model().page * ITEMS_PER_PAGE + i;
-        if (idx >= count) break;
-        u8g2.drawStr(TEXT_X_ZERO, TEXT_Y_ZERO + i * 10, model().item_name(idx));
-    }
+    showList(count);
 }
 
 void OLED_Screen::draw_screen(OLED_STATE state) {
@@ -70,13 +72,14 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
     }
 
     if (model().songInfo[0]) {
-        u8g2.drawStr(ICON_X_ZERO, TEXT_Y_ZERO + 40, model().songInfo);
-        u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 17, 3, 5, image_back_button_bits);
-        u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+        u8g2.drawStr(ICON_X_ZERO+1, TEXT_Y_ZERO + 40, model().songInfo);
+        u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 15, 3, 5, image_back_button_bits);
+        u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
+        
         if (model().paused) {
-            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_skip_button_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
         } else {
-            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 17, 3, 5, image_pause_bits);
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_pause_bits);
         }
     }
 
@@ -92,6 +95,16 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
             break;
         case SETTINGS_SCREEN:
             u8g2.drawXBMP(112, ICON_Y_ZERO, 9, 9, image_gear_bits);
+            showList(model().n_selects);
+            if (model().page == 0) {
+                if (model().repeat) {
+                    u8g2.drawStr(TEXT_X_ZERO + 70, TEXT_Y_ZERO + 30, "On");
+                } else {
+                    u8g2.drawStr(TEXT_X_ZERO + 70, TEXT_Y_ZERO + 30, "Off");
+                }
+                //draw volume arc (volume is already 0-256, dont need scaling)
+                u8g2.drawArc(ICON_X_ZERO + 100, ICON_Y_ZERO + 20, 5, 0, (256-model().volume));
+            }
             break;
         case PLAYLIST_SCREEN:
             u8g2.drawXBMP(117, 6, 5, 5, image_music_note_bits);

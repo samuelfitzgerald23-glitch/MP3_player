@@ -26,7 +26,6 @@ bool player::playerStart(const char* path, audio_t audio) {
     bufLen = bufPos = 0;
     stopPos = skipTags(track, audio);
     paused = 0;
-    vs->setVolume(volume, volume);
     return (bool)track;
 }
 

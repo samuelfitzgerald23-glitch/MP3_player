@@ -27,6 +27,7 @@ class PlayQueue {
             }
             idx_ = (start < count_) ? start : 0;
         }
+        void setRepeat(bool b) {repeat_ = b;}
         bool empty() const { return count_ == 0; }
         int  index() const { return idx_; }
         void set(int i)    { if (i >= 0 && i < count_) idx_ = i; }
@@ -162,9 +163,6 @@ class context {
         }
 };
 
-class State_Settings;
-class State_Playlist;
-
 class State_Home : public State {
     public:
         void handle_push() override;
@@ -176,22 +174,84 @@ class State_Home : public State {
         }
 };
 
+
+
+static const char* const SETTINGS_NAMES[] = {
+    "Power Save",
+    "Volume",
+    "Equaliser",
+    "Repeat Playlist",
+    //"Shuffle Playlist",
+};
+
+#define N_SETTINGS (sizeof(SETTINGS_NAMES) / sizeof(SETTINGS_NAMES[0]))
+
+inline const char* show_setting(int i) {
+    if (i < 0 || i >= N_SETTINGS) return "";
+    return SETTINGS_NAMES[i];
+}
+
 class State_Settings : public State {
-    public:
-        void handle_push() override {
-            switch(context_->model().current_select) {
-                case -1: 
-                    context_->transition_to(new State_Home());
-                    return;
-                default: return;
-            }
+    private:
+        //default settings
+        //bool powerSaveDefault = 0;    //not required?
+        int volumeDefault = 20;
+        // int treble = 0;              //not implamented yet
+        // int bass = 0;
+        bool repeatDefault = 1;
+        //bool shufflePlaylist = 0;     //maybe later
+
+        void applyDefaults() {
+            //apply default settings
+            context_->audio()->setVol(volumeDefault);
+            context_->queue()->setRepeat(repeatDefault);
         }
+
+    public:
+        void handle_push() override;
         void handle_rot(int dir) override {
             context_->model().scrollScreen(dir);
         }
         void setScreen() override {
-            context_->model().show_list(SETTINGS_SCREEN, "Settings", 7, 1, nullptr);
+            context_->model().show_list(SETTINGS_SCREEN, "Settings", N_SETTINGS, 1, show_setting);
         }
+};
+
+class State_PowerSave : public State {
+    public:
+        void handle_push() override {
+            context_->model().setPowerMode(0);
+            context_->transition_to(new State_Settings);
+            return;
+        };
+        void handle_rot(int dir) override {
+            return;
+        }
+        void setScreen() override {
+            context_->model().setPowerMode(1);
+        }
+};
+
+//stay on setting screen, but encoder changes volume, pressing sets vol
+class State_volume : public State {
+    private:
+        int tempVol;
+    public:
+        State_volume() {
+            tempVol = context_->model().volume;
+        }
+        void handle_push() override {
+            context_->audio()->setVol(tempVol);
+            context_->transition_to(new State_Settings);
+            return;
+        };
+        void handle_rot(int dir) override {
+            tempVol = constrain((tempVol-dir), 0, 256);
+            context_->model().volume = tempVol;
+        }
+        void setScreen() override {
+            return;
+        };
 };
 
 class State_Playlist : public State {

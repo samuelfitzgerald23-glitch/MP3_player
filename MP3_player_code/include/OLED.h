@@ -13,7 +13,7 @@
 #define ICON_Y_ZERO (ZERO_Y + 3)
 
 #define TEXT_X_ZERO (ZERO_X + 14)
-#define TEXT_Y_ZERO (ZERO_Y + 20)
+#define TEXT_Y_ZERO (ZERO_Y + 19)
 #define CURSOUR_Y_ZERO (ICON_Y_ZERO + 10)
 
 #define ART_X_ZERO (ZERO_X + 80)
@@ -31,7 +31,7 @@ class OLED_Screen {
 
         UI_model& model() {return model_;}
 
-        void togglePowerMode();
+        void showList(int count);
 
         void displayFileText();
 

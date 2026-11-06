@@ -73,6 +73,11 @@ class player {
             mutex_exit(&busMutex);
         }
 
+        void setVol(int i) {
+            volume = i;
+            vs->setVolume(i, i);
+        }
+
         //called on core 1
         void task();
         
