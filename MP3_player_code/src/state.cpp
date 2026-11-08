@@ -108,9 +108,6 @@ void State_Settings::handle_push() {
             context_->transition_to(new State_volume);
             return;
         case 2:
-            //equaliser state
-            return;
-        case 3:
             //change repeat playlist
             context_->model().repeat = !context_->model().repeat;
             context_->queue()->setRepeat(context_->model().repeat);

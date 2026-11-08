@@ -5,6 +5,8 @@
 
 #define BAURD_RATE 9600
 
+#define DISPLAY_UPDATE_MS 20
+
 UI_model model;
 OLED_Screen *display;
 context *cxt;
@@ -44,6 +46,7 @@ void setup() {
 }
 
 static uint32_t t = 0;
+static uint32_t lastDisplayUpdate = 0;
 
 void loop() {
   if (audio->getFinished()) cxt->request_skip();
@@ -58,22 +61,19 @@ void loop() {
   }
 
   int rot = getRotation();
-  if(rot != 0) {
-    // Serial.print("Encoder rotated: ");
-    // Serial.println(rot);
-    cxt->request_rot(rot);
-  }
+  if(rot != 0) cxt->request_rot(rot);
 
-  if(getPushEvent(ENCODER_SW)) {
-    //Serial.println("Encoder button pushed!");
-    cxt->request_push();
-  }
+  if(getPushEvent(ENCODER_SW)) cxt->request_push();
 
   if(getPushEvent(BUTTON_1)) cxt->request_skip();
   if(getPushEvent(BUTTON_2)) cxt->request_pause_play();
+  if(getPushEvent(BUTTON_1_DOUBLE_PRESS)) cxt->request_back();
+  if(getPushEvent(BUTTON_2_DOUBLE_PRESS)) cxt->request_stop();
 
-  display->display();
-  delay(20);
+  if(millis() - lastDisplayUpdate > DISPLAY_UPDATE_MS) {
+    display->display();
+    lastDisplayUpdate = millis();
+  }
 }
 
 void setup1() {

@@ -11,8 +11,6 @@
 #define BUTTON_1_PIN 16
 #define BUTTON_2_PIN 17
 
-#define DOUBLE_PRESS_MS 500
-
 enum BUTTON : uint8_t {
     ENCODER_SW,
     ENCODER_DT,

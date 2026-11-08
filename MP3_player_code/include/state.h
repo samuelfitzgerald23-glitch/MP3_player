@@ -179,8 +179,8 @@ class State_Home : public State {
 static const char* const SETTINGS_NAMES[] = {
     "Power Save",
     "Volume",
-    "Equaliser",
     "Repeat Playlist",
+    //"Equaliser",
     //"Shuffle Playlist",
 };
 
