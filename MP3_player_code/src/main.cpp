@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "state.h"
 #include "OLED.h"
-#include "encoder.h"
+#include "UserInputs.h"
 
 #define BAURD_RATE 9600
 
@@ -32,8 +32,8 @@ void setup() {
   // Initialize the OLED display
   display = new OLED_Screen(model);
 
-  // Initialize the encoder
-  encoder_init();
+  // Initialize the user inputs
+  inputs_init();
 
   //init player
   audio = new player();
@@ -43,8 +43,19 @@ void setup() {
   player_ready = 1;
 }
 
+static uint32_t t = 0;
+
 void loop() {
   if (audio->getFinished()) cxt->request_skip();
+
+  if (millis() - t > 100) {
+      t = millis();
+      Serial.printf("Paused: %d\n", cxt->model().paused);
+      Serial.printf("PullUp16: %d, PullUp17: %d\n", gpio_is_pulled_up(16), gpio_is_pulled_up(17));
+      Serial.printf("fn16=%d fn17=%d\n", gpio_get_function(16), gpio_get_function(17));
+      Serial.printf("b1=%d b2=%d sw=%d\n", digitalRead(BUTTON_1_PIN),
+                    digitalRead(BUTTON_2_PIN), digitalRead(ENCODER_SW_PIN));
+  }
 
   int rot = getRotation();
   if(rot != 0) {
@@ -53,10 +64,13 @@ void loop() {
     cxt->request_rot(rot);
   }
 
-  if(getPushEvent()) {
+  if(getPushEvent(ENCODER_SW)) {
     //Serial.println("Encoder button pushed!");
     cxt->request_push();
   }
+
+  if(getPushEvent(BUTTON_1)) cxt->request_skip();
+  if(getPushEvent(BUTTON_2)) cxt->request_pause_play();
 
   display->display();
   delay(20);

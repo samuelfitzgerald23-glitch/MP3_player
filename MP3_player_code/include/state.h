@@ -151,7 +151,7 @@ class context {
         //button 2
         //single press
         void request_pause_play() {
-            if(!audio_->isActive()) {
+            if(audio_->isActive()) {
             model_.paused = !model_.paused;
             audio_->pause_req(model_.paused);
             }

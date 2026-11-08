@@ -66,7 +66,8 @@ void player::task() {
 
     switch(pendingCMD) {
         case PLAY:
-            if(playerStart(pendingPath, pendingAudio)) active = 1;
+            playerStart(pendingPath, pendingAudio);
+            active = 1;
             pendingCMD = IDLE;
             break;
         case STOP:
