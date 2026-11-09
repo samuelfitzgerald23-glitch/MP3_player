@@ -228,6 +228,7 @@ class State_PowerSave : public State {
             return;
         }
         void setScreen() override {
+            context_->model().show_list(SETTINGS_SCREEN, "Power save", 1, 1, nullptr);
             context_->model().setPowerMode(1);
         }
 };

@@ -38,7 +38,9 @@ class OLED_Screen {
         void draw_screen(OLED_STATE state);
 
         OLED_Screen(UI_model& model) : model_(model) {
+            pinMode(LED_BUILTIN, OUTPUT);
             OLED_init();
+            digitalWrite(LED_BUILTIN, HIGH);
         }
 
         ~OLED_Screen() {}

@@ -17,8 +17,6 @@ volatile bool player_ready = 0;
 void setup() {
   mutex_init(&busMutex);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
   Serial.begin(BAURD_RATE);
   delay(1000);
   Serial.println("MP3 Player starting...");
@@ -26,13 +24,12 @@ void setup() {
   // Initialize SPI
   SPI_init();
 
-  // Initialize the SD card
-  if(!SD_init()) {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
-
   // Initialize the OLED display
   display = new OLED_Screen(model);
+
+  // Initialize the SD card
+  SD_init();
+
 
   // Initialize the user inputs
   inputs_init();
@@ -51,14 +48,14 @@ static uint32_t lastDisplayUpdate = 0;
 void loop() {
   if (audio->getFinished()) cxt->request_skip();
 
-  if (millis() - t > 100) {
-      t = millis();
-      Serial.printf("Paused: %d\n", cxt->model().paused);
-      Serial.printf("PullUp16: %d, PullUp17: %d\n", gpio_is_pulled_up(16), gpio_is_pulled_up(17));
-      Serial.printf("fn16=%d fn17=%d\n", gpio_get_function(16), gpio_get_function(17));
-      Serial.printf("b1=%d b2=%d sw=%d\n", digitalRead(BUTTON_1_PIN),
-                    digitalRead(BUTTON_2_PIN), digitalRead(ENCODER_SW_PIN));
-  }
+  // if (millis() - t > 100) {
+  //     t = millis();
+  //     Serial.printf("Paused: %d\n", cxt->model().paused);
+  //     Serial.printf("PullUp16: %d, PullUp17: %d\n", gpio_is_pulled_up(16), gpio_is_pulled_up(17));
+  //     Serial.printf("fn16=%d fn17=%d\n", gpio_get_function(16), gpio_get_function(17));
+  //     Serial.printf("b1=%d b2=%d sw=%d\n", digitalRead(BUTTON_1_PIN),
+  //                   digitalRead(BUTTON_2_PIN), digitalRead(ENCODER_SW_PIN));
+  // }
 
   int rot = getRotation();
   if(rot != 0) cxt->request_rot(rot);

@@ -5,10 +5,10 @@ void SPI_init() {
     Serial.println("Initializing SPI bus...");
     
     //OLED screen
-    // pinMode(OLED_CS_PIN, OUTPUT);
-    // digitalWrite(OLED_CS_PIN, 1);    // idle high before anything talks to the bus
-    // pinMode(OLED_DC_PIN, OUTPUT);
-    // pinMode(OLED_RESET_PIN, OUTPUT);
+    pinMode(OLED_CS_PIN, OUTPUT);
+    digitalWrite(OLED_CS_PIN, 1);    // idle high before anything talks to the bus
+    pinMode(OLED_DC_PIN, OUTPUT);
+    pinMode(OLED_RESET_PIN, OUTPUT);
 
     //SD card
     pinMode(SD_CS_PIN, OUTPUT);
