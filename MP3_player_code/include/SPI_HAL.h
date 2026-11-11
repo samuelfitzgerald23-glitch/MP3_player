@@ -14,13 +14,13 @@
 #define OLED_CS_PIN 8
 
 //for SD card
-#define SD_CS_PIN 10
+#define SD_CS_PIN 12
 
-//for audio decoder (temp values)
-#define AUDIO_RESET_PIN 12
-#define AUDIO_CS_PIN 11
-#define AUDIO_DATA_PIN 9
-#define AUDIO_DREQ_PIN 13
+//for audio decoder
+#define AUDIO_RESET_PIN 14
+#define AUDIO_CS_PIN 13
+#define AUDIO_DATA_PIN 11
+#define AUDIO_DREQ_PIN 15
 
 void SPI_init(); 
 

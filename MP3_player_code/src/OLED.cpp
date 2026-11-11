@@ -1,6 +1,6 @@
 #include "OLED.h"
 
-#define USE_SH1106 1
+#define USE_SH1106 0
 
 // Bitmap data for the images
 static const unsigned char image_Attention_bits[] U8X8_PROGMEM = {0x0e,0x0a,0x0a,0x0a,0x0e,0x04,0x00,0x0e};
@@ -29,7 +29,7 @@ static const unsigned char image_Volup_bits[] U8X8_PROGMEM = {0x48,0x8c,0xaf,0xa
 static const unsigned char image_back_arrow_bits[] U8X8_PROGMEM = {0x18,0x7d,0x8f,0x07,0x0f};
 
 #if USE_SH1106
-U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
+U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 #else
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /*cs=*/ OLED_CS_PIN, /*dc=*/ OLED_DC_PIN, /*reset=*/ OLED_RESET_PIN);
 #endif
@@ -125,10 +125,14 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
 }
 
 void OLED_Screen::OLED_init() {
+    digitalWrite(OLED_RESET_PIN, HIGH);
 
-    if(!u8g2.begin()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+
+    if(u8g2.begin()) {
         // Handle initialization error
         Serial.println("OLED initialization failed!");
+        digitalWrite(LED_BUILTIN, 1);
     }
 
     u8g2.setPowerSave(0);
@@ -136,12 +140,12 @@ void OLED_Screen::OLED_init() {
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
     u8g2.setFont(u8g2_font_4x6_tr);
+    u8g2.setContrast(255);
 }
 
 void OLED_Screen::display() {
     u8g2.clearBuffer();
     mutex_enter_blocking(&busMutex);
-    
     u8g2.firstPage();
     do {
         draw_screen(model().screen);
