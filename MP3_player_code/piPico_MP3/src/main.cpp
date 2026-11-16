@@ -7,6 +7,8 @@
 
 #define DISPLAY_UPDATE_MS 20
 
+mutex_t busMutex;
+
 UI_model model;
 OLED_Screen *display;
 context *cxt;
