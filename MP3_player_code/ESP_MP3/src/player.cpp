@@ -21,27 +21,58 @@ static void resetPlayer(Adafruit_VS1053* player) {
 #endif
 
 bool player::playerStart(const char* path, audio_t audio) {
-    track.close();
     #if USE_VS1053
+    track.close();
     resetPlayer(vs);
-    #endif
     track = getSD()->open(path, O_RDONLY);
     if (!track) { paused = 1; return false; }
     bufLen = bufPos = 0;
     stopPos = skipTags(track, audio);
     paused = 0;
     return (bool)track;
+    #elif USE_TLV320DAC3100
+    cleanUpTrack();
+    track = new AudioFileSourceSdFat(path, audio);
+    switch (audio) {
+        case MP3V2:
+            id3 = new AudioFileSourceID3(track);
+            decoder = new AudioGeneratorMP3();
+            decoder->begin(id3, i2s);
+            break;
+        case OGG:
+            decoder = new AudioGeneratorOpus();
+            decoder->begin(track, i2s);
+            break;
+        default:
+            break;
+    }
+    bool opened = track->isOpen();
+    if(!opened) {paused = 1; return 0;}
+    paused = 0;
+    return opened;
+    #else
+    return 0;
+    #endif
 }
 
 void player::stopPlaying() {
     //if no track is open we are already not playing anything
+    #if USE_VS1053
     if (track) {
         track.close();
     }
+    #elif USE_TLV320DAC3100
+    if (track->isOpen()) {
+        decoder->stop();
+        cleanUpTrack();
+    }
+    #endif
 }
 
 void player::fill_buff() {
-    if (!track || paused) return;
+    if(paused) return;
+    #if USE_VS1053
+    if (!track) return;
     while(playerReadyForData()) {
         if (bufPos >= bufLen) {
             int n = track.read(buf, sizeof(buf));
@@ -58,11 +89,18 @@ void player::fill_buff() {
             bufLen = n; bufPos = 0;
         }
         int n = min(ADUIO_BUFFER_SIZE, bufLen - bufPos); // the chip takes 32-byte chunks
-        #if USE_VS1053
         vs->playData(buf + bufPos, n);
-        #endif
         bufPos += n;
     }
+    #elif USE_TLV320DAC3100
+    if(decoder && decoder->isRunning()) {
+        if(!decoder->loop()) {
+            stopPlaying();
+            finished = 1;
+            return;
+        }
+    }
+    #endif
 }
 
 void player::task() {
@@ -82,10 +120,8 @@ void player::task() {
             active = 0;
             break;
         default:
-            #if USE_TLV320DAC3100
-            sineTest();
-            #endif
             //fill_buff();
+            sineTest();
 
     }
 }

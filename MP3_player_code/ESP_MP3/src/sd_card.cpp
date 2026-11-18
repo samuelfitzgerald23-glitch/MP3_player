@@ -176,27 +176,6 @@ static bool Tagv2(FsFile &file, Tag_t *outBufs) {
     return 0;
 }
 
-//read legacy MP3 file metadata
-static bool Tagv1(FsFile &file, Tag_t *outBufs) {
-    uint64_t size = file.size();
-    if(size < 128) return 0;
-    uint64_t header_start = size - 128;
-    if(!file.seek(header_start)) return 0;
-
-    char header[3];
-    file.read(header, 3);
-    if(memcmp(header, "TAG", 3) != 0) return 0;    //no v1 tag
-    outBufs->ID = MP3V1;
-
-    readAtPos(file, header_start + TAGV1TITLESTART, (uint8_t*)outBufs->song, TAGV1SIZE);
-    outBufs->song[30] = '\0';
-
-    readAtPos(file, header_start + TAGV1ARTISTSTART, (uint8_t*)outBufs->artist, TAGV1SIZE);
-    outBufs->artist[30] = '\0';
-
-    return 1;
-}
-
 //read ogg Vorbis metadata
 static bool readVorbis(FsFile& file, Tag_t* out) {
     static uint8_t buf[2048];            // static: too big for the stack; the bus mutex serialises callers
@@ -246,12 +225,12 @@ Tag_t getMetaData(const char *path) {
 
     FsFile file = sd.open(path);
     if(!file) {
-        Serial.println("couldn't find fie");
+        Serial.println("couldn't find file");
         return data;
     }
 
     bool tagged = isOgg(path) ? readVorbis(file, &data)
-                                : (Tagv2(file, &data) || Tagv1(file, &data));
+                                : Tagv2(file, &data);
 
     if(tagged) {
         file.close(); 
@@ -288,8 +267,8 @@ int skipTags(FsFile& file, const audio_t audio) {
     uint32_t end = file.size();
 
     switch(audio) {
-        case MP3V1:
-            return (end - 128);
+        // case MP3V1:
+        //     return (end - 128);
         case MP3V2: {
             file.read(h, 10);
             start = 10 + readSynchsafeInt(&h[6]);

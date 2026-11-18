@@ -23,7 +23,13 @@
 
 #include <Adafruit_TLV320DAC3100.h>
 #include "Wire.h"
-#include <ESP_I2S.h>
+//#include <ESP_I2S.h>
+
+#include "AudioFileSource.h"
+#include "AudioGeneratorMP3.h"
+#include "AudioGeneratorOpus.h"
+#include "AudioOutputI2S.h"
+#include "AudioFileSourceID3.h"
 
 //for DAC and I2S output
 #define AUDIO_RST_PIN 14
@@ -119,6 +125,63 @@ static bool startDAC(Adafruit_TLV320DAC3100 &DAC, char* message) {
     return 1;
 }
 
+class AudioFileSourceSdFat : public AudioFileSource {
+    private:
+        SdFs *sd;
+        FsFile file;
+    public:
+        AudioFileSourceSdFat(const char* path, audio_t audio) {
+            sd = getSD();
+            open(path);
+            skipTags(file, audio);
+        }
+
+        virtual ~AudioFileSourceSdFat() override {
+            close();
+        }
+
+        virtual bool close() override {
+            if (file) {
+                file.close();
+            }
+            return 1;
+        }
+
+        virtual bool open(const char* filename) override {
+            close();
+            file = sd->open(filename, O_RDONLY);
+            return (bool)file;
+        }
+
+        virtual uint32_t read(void *data, uint32_t len) override {
+            if (!file) return 0;
+            int bytesRead = file.read(data, len);
+            return (bytesRead < 0) ? 0 : (uint32_t)bytesRead;
+        }
+
+        virtual bool seek(int32_t pos, int dir) override {
+            if (!file) return false;
+            if (dir == SEEK_SET) return file.seekSet(pos);
+            if (dir == SEEK_CUR) return file.seekCur(pos);
+            if (dir == SEEK_END) return file.seekEnd(pos);
+            return false;
+        }
+
+        virtual bool isOpen() override {
+            return (bool)file;
+        }
+
+        virtual uint32_t getSize() override {
+            if (!file) return 0;
+            return file.size();
+        }
+
+        virtual uint32_t getPos() override {
+            if (!file) return 0;
+            return file.curPosition();
+        }
+};
+
 #endif
 
 #define BUFFSIZE 512
@@ -139,9 +202,16 @@ class player {
     private:
         #if USE_VS1053
         Adafruit_VS1053 *vs;
+        FsFile track;
         #elif USE_TLV320DAC3100
-        I2SClass i2s;
+        //I2SClass i2s;
+        AudioOutputI2S *i2s = nullptr;
         Adafruit_TLV320DAC3100 codec;
+
+        AudioFileSourceSdFat *track = nullptr;
+        AudioGenerator *decoder = nullptr;
+
+        AudioFileSourceID3 *id3 = nullptr;
 
         void sineTest() {
             static int16_t buf[256 * 2];
@@ -153,11 +223,30 @@ class player {
                 buf[2 * i] = s;                              // left
                 buf[2 * i + 1] = s;                          // right
             }
-            i2s.write((uint8_t*)buf, sizeof(buf));
+            uint16_t done = 0;
+            while (done < 256) {
+                done += i2s->ConsumeSamples(buf + 2 * done, 256 - done);
+                if (done < 256) delay(1);                        // DMA buffers full: yield, then retry the rest
+            }
+        }
+
+        void cleanUpTrack() {
+            //clean up function for audio decoder
+            if(decoder) {
+                delete decoder;
+                decoder = nullptr;
+            }
+            if(id3) {
+                delete id3;
+                id3 = nullptr;
+            }
+            if(track) {
+                delete track;
+                track = nullptr;
+            }
         }
         #endif
 
-        FsFile track;
         uint8_t buf[BUFFSIZE];
         int bufLen = 0;
         int bufPos = 0;
@@ -217,12 +306,14 @@ class player {
                 while(1);
             }
 
-            i2s.setPins(AUDIO_BCK_PIN, AUDIO_WSEL_PIN, AUDIO_DIN_PIN);
-            if (!i2s.begin(I2S_MODE_STD, SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO)) {
+            i2s = new AudioOutputI2S();
+            i2s->SetPinout(AUDIO_BCK_PIN, AUDIO_WSEL_PIN, AUDIO_DIN_PIN);
+            i2s->SetRate(SAMPLE_RATE);
+            i2s->SetChannels(2);
+            if(!i2s->begin()) {
                 Serial.println("i2s failed to start");
                 while(1);
             }
-
             #endif
         }
 

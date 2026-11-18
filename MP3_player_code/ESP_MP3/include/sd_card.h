@@ -20,7 +20,6 @@ enum ListMode { LIST_FOLDERS, LIST_AUDIO };
 
 enum audio_t {
     NONE,
-    MP3V1,
     MP3V2,
     OGG
 };
