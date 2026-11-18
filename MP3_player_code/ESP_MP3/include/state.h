@@ -93,6 +93,7 @@ class context {
         PlayQueue* queue() {return &queue_;}
 
         void transition_to(State *state) {
+            model_.clearAnimations();
             if (this->state_ != nullptr)
                 delete this->state_;
             this->state_ = state;
@@ -108,6 +109,7 @@ class context {
             Serial.printf("playing: '%s'\n", tag.path);
             //format metadata to display on OLED
             formatTag(tag, model_.songInfo, sizeof(model_.songInfo));
+            model_.songTitle.setText(model_.songInfo, millis());
             //start playing the next song
             audio_->start_req(tag);
             model_.paused = 0;

@@ -16,12 +16,6 @@
 //for SD card
 #define SD_CS_PIN 5
 
-//for audio decoder (will most likely be removed in the future)
-#define AUDIO_RESET_PIN 25
-#define AUDIO_CS_PIN 26
-#define AUDIO_DATA_PIN 27
-#define AUDIO_DREQ_PIN 14
-
 //void SPI_init(); 
 
 #endif // SPI_HAL_H

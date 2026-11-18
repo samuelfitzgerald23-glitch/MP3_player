@@ -3,6 +3,7 @@
 #include "OLED.h"
 #include "UserInputs.h"
 
+//cnuiwvnwo
 #define BAURD_RATE 9600
 
 #define DISPLAY_UPDATE_MS 20
@@ -74,6 +75,7 @@ void loop() {
   if(getPushEvent(BUTTON_2_DOUBLE_PRESS)) cxt->request_stop();
 
   if(millis() - lastDisplayUpdate > DISPLAY_UPDATE_MS) {
+    model.tick(millis());
     display->display();
     lastDisplayUpdate = millis();
   }

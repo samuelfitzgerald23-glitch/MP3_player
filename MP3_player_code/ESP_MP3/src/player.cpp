@@ -82,7 +82,11 @@ void player::task() {
             active = 0;
             break;
         default:
-            fill_buff();
+            #if USE_TLV320DAC3100
+            sineTest();
+            #endif
+            //fill_buff();
+
     }
 }
 

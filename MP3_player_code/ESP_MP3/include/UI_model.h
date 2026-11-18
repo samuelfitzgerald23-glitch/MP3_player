@@ -2,10 +2,41 @@
 #define UI_MODEL_H
 
 #include "Arduino.h"
+#include "animation.h"
 
 #define ITEMS_PER_PAGE 4
 
 #define MAX_VOL 254
+
+#define MAX_ANIMS 6
+
+/********************************************************************************************************
+ * screen placement defs
+ */
+
+#define ZERO_X 0
+#define ZERO_Y 1
+
+#define ICON_X_ZERO (ZERO_X + 2)
+#define ICON_Y_ZERO (ZERO_Y + 3)
+
+#define TEXT_X_ZERO (ZERO_X + 14)
+#define TEXT_Y_ZERO (ZERO_Y + 19)
+#define CURSOUR_Y_ZERO (ICON_Y_ZERO + 10)
+
+#define TEXT_LINE_HEIGHT 10
+#define TEXT_LINE_2_Y (TEXT_Y_ZERO + TEXT_LINE_HEIGHT)
+#define TEXT_LINE_3_Y (TEXT_Y_ZERO + 2*TEXT_LINE_HEIGHT)
+
+#define INFO_TEXT_X_ZERO (TEXT_X_ZERO + 70)
+
+#define ART_X_ZERO (ZERO_X + 80)
+#define ART_Y_ZERO (ZERO_Y + 10)
+
+#define BACK_X_ZERO (ZERO_X + 115)
+#define BACK_Y_ZERO (ZERO_Y + 53)
+
+/************************************************************************************************************** */
 
 enum OLED_STATE {
     HOME_SCREEN,
@@ -20,6 +51,7 @@ struct UI_model {
     OLED_STATE screen = HOME_SCREEN;
     const char* title = "";
     char songInfo[132] = {0};
+    AnimatedObject songTitle = AnimatedObject::Text((ICON_X_ZERO + 1), (TEXT_Y_ZERO + 40), 27);
 
     bool back_button = 0;
     bool paused = 0;
@@ -77,6 +109,20 @@ struct UI_model {
     }
 
     void setPowerMode(bool b);
+
+    AnimatedObject* anims[MAX_ANIMS] = {};
+    uint8_t nAnims = 0;
+
+    void addAnimation(AnimatedObject* a) {
+        if (nAnims < MAX_ANIMS) { a->reset(millis()); anims[nAnims++] = a; }
+    }
+    
+    void clearAnimations() { nAnims = 0; }
+
+    void tick(uint32_t now) {
+        songTitle.tick(now);
+        for (uint8_t i = 0; i < nAnims; i++) anims[i]->tick(now);
+    }
 };
 
 #endif //UI_MODEL_H

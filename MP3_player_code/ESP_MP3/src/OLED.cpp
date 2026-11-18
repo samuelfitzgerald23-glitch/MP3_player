@@ -57,6 +57,12 @@ void OLED_Screen::displayFileText() {
     showList(count);
 }
 
+static void drawAnimated(const AnimatedObject& a) {
+    if (a.empty()) return;
+    if (a.kind() == AnimatedObject::TEXT) u8g2.drawStr(a.x(), a.y(), a.text());
+    else if (a.bits())                    u8g2.drawXBMP(a.x(), a.y(), a.w(), a.h(), a.bits());
+}
+
 void OLED_Screen::draw_screen(OLED_STATE state) {
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
@@ -76,18 +82,6 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
         default:
             u8g2.drawXBMP(ICON_X_ZERO, CURSOUR_Y_ZERO + 10*model().current_select, 5, 8, image_Attention_bits);
             break;
-    }
-
-    if (model().songInfo[0]) {
-        u8g2.drawStr(ICON_X_ZERO+1, TEXT_Y_ZERO + 40, model().songInfo);
-        u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 15, 3, 5, image_back_button_bits);
-        u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
-        
-        if (model().paused) {
-            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
-        } else {
-            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_pause_bits);
-        }
     }
 
     switch (state) {
@@ -126,6 +120,21 @@ void OLED_Screen::draw_screen(OLED_STATE state) {
             break;
     }
 
+    //draw animations
+    for (uint8_t i = 0; i < model().nAnims; i++) drawAnimated(*model().anims[i]);
+    drawAnimated(model().songTitle);
+    if (!model().songTitle.empty()) {
+        u8g2.drawXBMP(ART_X_ZERO + 7, TEXT_Y_ZERO - 15, 3, 5, image_back_button_bits);
+        u8g2.drawXBMP(ART_X_ZERO + 21, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
+        
+        if (model().paused) {
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_skip_button_bits);
+            model().songTitle.stop();
+        } else {
+            u8g2.drawXBMP(ART_X_ZERO + 14, TEXT_Y_ZERO - 15, 3, 5, image_pause_bits);
+            model().songTitle.resume(millis());
+        }
+    }
 }
 
 void OLED_Screen::OLED_init() {
