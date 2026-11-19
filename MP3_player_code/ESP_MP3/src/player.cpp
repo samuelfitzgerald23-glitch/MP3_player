@@ -33,23 +33,36 @@ bool player::playerStart(const char* path, audio_t audio) {
     #elif USE_TLV320DAC3100
     cleanUpTrack();
     track = new AudioFileSourceSdFat(path, audio);
+    if (!track->isOpen()) {
+        Serial.println("Failed to open track");
+        cleanUpTrack();
+        paused = 1;
+        return false;
+    }
+
     switch (audio) {
         case MP3V2:
-            id3 = new AudioFileSourceID3(track);
             decoder = new AudioGeneratorMP3();
-            decoder->begin(id3, i2s);
             break;
         case OGG:
             decoder = new AudioGeneratorOpus();
-            decoder->begin(track, i2s);
             break;
         default:
-            break;
+            Serial.println("Unsupported audio format");
+            cleanUpTrack();
+            paused = 1;
+            return false;
     }
-    bool opened = track->isOpen();
-    if(!opened) {paused = 1; return 0;}
+
+    if (!decoder->begin(track, i2s)) {
+        Serial.println("Decoder failed to initialise");
+        cleanUpTrack();
+        paused = 1;
+        return false;
+    }
+
     paused = 0;
-    return opened;
+    return 1;
     #else
     return 0;
     #endif
@@ -62,10 +75,8 @@ void player::stopPlaying() {
         track.close();
     }
     #elif USE_TLV320DAC3100
-    if (track->isOpen()) {
-        decoder->stop();
+    if (decoder) decoder->stop();
         cleanUpTrack();
-    }
     #endif
 }
 
@@ -119,9 +130,11 @@ void player::task() {
             pendingCMD = IDLE;
             active = 0;
             break;
-        default:
-            //fill_buff();
+        case TEST:
             sineTest();
+            break;
+        default:
+            fill_buff();
 
     }
 }

@@ -127,59 +127,53 @@ static bool startDAC(Adafruit_TLV320DAC3100 &DAC, char* message) {
 
 class AudioFileSourceSdFat : public AudioFileSource {
     private:
-        SdFs *sd;
-        FsFile file;
+        FsFile   file;
+        uint32_t start_ = 0;     // first audio byte (after any ID3v2 tag)
+        uint32_t end_   = 0;     // one past the last audio byte (before any ID3v1 trailer)
     public:
-        AudioFileSourceSdFat(const char* path, audio_t audio) {
-            sd = getSD();
-            open(path);
-            skipTags(file, audio);
+        AudioFileSourceSdFat(const char* path, audio_t type) {
+            file = getSD()->open(path, O_RDONLY);
+            if (!file) return;
+            end_   = skipTags(file, type);       // seeks to the start of the audio, returns where it ends
+            start_ = file.curPosition();
         }
+        ~AudioFileSourceSdFat() override { close(); }
 
-        virtual ~AudioFileSourceSdFat() override {
+        bool open(const char* filename) override {
             close();
+            file = getSD()->open(filename, O_RDONLY);
+            start_ = 0;
+            end_   = file ? file.size() : 0;
+            return (bool)file;
         }
+        bool close() override { if (file) file.close(); return true; }
+        bool isOpen() override { return (bool)file; }
 
-        virtual bool close() override {
-            if (file) {
-                file.close();
+        uint32_t read(void* data, uint32_t len) override {
+            if (!file) return 0;
+            uint32_t pos = file.curPosition();
+            if (pos >= end_) return 0;
+            if (len > end_ - pos) len = end_ - pos;          // never hand the decoder the trailer
+            int n = file.read(data, len);
+            if (n < 0) {
+                Serial.printf("SD read error at %lu: 0x%02X,0x%02X\n", (unsigned long)pos,
+                            getSD()->card()->errorCode(), getSD()->card()->errorData());
+                return 0;                         // the decoder treats this as end of file
             }
-            return 1;
+            return n;
         }
-
-        virtual bool open(const char* filename) override {
-            close();
-            file = sd->open(filename, O_RDONLY);
-            return (bool)file;
-        }
-
-        virtual uint32_t read(void *data, uint32_t len) override {
-            if (!file) return 0;
-            int bytesRead = file.read(data, len);
-            return (bytesRead < 0) ? 0 : (uint32_t)bytesRead;
-        }
-
-        virtual bool seek(int32_t pos, int dir) override {
+        bool seek(int32_t pos, int dir = SEEK_SET) override {           // positions are relative to the audio payload
             if (!file) return false;
-            if (dir == SEEK_SET) return file.seekSet(pos);
-            if (dir == SEEK_CUR) return file.seekCur(pos);
-            if (dir == SEEK_END) return file.seekEnd(pos);
-            return false;
+            int64_t t;
+            if      (dir == SEEK_SET) t = (int64_t)start_ + pos;
+            else if (dir == SEEK_CUR) t = (int64_t)file.curPosition() + pos;
+            else if (dir == SEEK_END) t = (int64_t)end_ + pos;
+            else return false;
+            if (t < (int64_t)start_ || t > (int64_t)end_) return false;
+            return file.seekSet((uint64_t)t);
         }
-
-        virtual bool isOpen() override {
-            return (bool)file;
-        }
-
-        virtual uint32_t getSize() override {
-            if (!file) return 0;
-            return file.size();
-        }
-
-        virtual uint32_t getPos() override {
-            if (!file) return 0;
-            return file.curPosition();
-        }
+        uint32_t getSize() override { return file ? end_ - start_ : 0; }
+        uint32_t getPos()  override { return file ? (uint32_t)file.curPosition() - start_ : 0; }
 };
 
 #endif
@@ -196,6 +190,7 @@ enum PLAYER_CMD {
     IDLE,
     STOP,
     PLAY,
+    TEST
 };
 
 class player {
@@ -204,7 +199,6 @@ class player {
         Adafruit_VS1053 *vs;
         FsFile track;
         #elif USE_TLV320DAC3100
-        //I2SClass i2s;
         AudioOutputI2S *i2s = nullptr;
         Adafruit_TLV320DAC3100 codec;
 
@@ -330,9 +324,10 @@ class player {
             std::lock_guard<std::mutex> guard(busMutex);
             pendingPause = p;
         }
-        void stop_req() {
+
+        void set_req(PLAYER_CMD CMD = IDLE) {
             std::lock_guard<std::mutex> guard(busMutex);
-            pendingCMD = STOP;
+            pendingCMD = CMD;
         }
 
         void setVol(int vol) {

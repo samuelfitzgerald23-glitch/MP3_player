@@ -161,7 +161,7 @@ class context {
 
         //double press
         void request_stop() {
-            if(audio_->isActive()) audio_->stop_req();
+            if(audio_->isActive()) audio_->set_req(STOP);
         }
 };
 
@@ -182,6 +182,7 @@ static const char* const SETTINGS_NAMES[] = {
     "Power Save",
     "Volume",
     "Repeat Playlist",
+    "Test Audio"
     //"Equaliser",
     //"Shuffle Playlist",
 };
@@ -251,6 +252,21 @@ class State_volume : public State {
         }
         void setScreen() override {
             tempVol = context_->model().volume;
+        };
+};
+
+class State_tester : public State {
+    public:
+        void handle_push() override {
+            context_->audio()->set_req(IDLE);
+            context_->transition_to(new State_Settings);
+            return;
+        };
+        void handle_rot(int dir) override {
+            return;
+        }
+        void setScreen() override {
+            context_->audio()->set_req(TEST);
         };
 };
 

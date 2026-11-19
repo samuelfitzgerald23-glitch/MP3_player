@@ -112,6 +112,10 @@ void State_Settings::handle_push() {
             context_->model().repeat = !context_->model().repeat;
             context_->queue()->setRepeat(context_->model().repeat);
             return;
+        case 3:
+            //test audio state
+            context_->transition_to(new State_tester);
+            return;
         default: 
             return;
     }
